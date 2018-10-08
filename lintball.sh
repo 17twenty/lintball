@@ -48,7 +48,7 @@ if ! [ -x "$(command -v shellcheck)" ]; then
 fi
 
 if ! [ -x "$(command -v pylint)" ]; then
-  echo 'Error: shellcheck not found' >&2
+  echo 'Error: pylint not found' >&2
   exit 1
 fi
 
@@ -62,17 +62,17 @@ if ! [ -x "$(command -v yamllint)" ]; then
   exit 1
 fi
 
-RC=0
 
-# Assign "unique" filename to the results using PID
+# Assign "unique" filename to the results using timestamp
 OUTFILE="/scan/lintresults.$(date +%s%N)"
 # Ensure outfile is empty just in case it pre-exists
 true > "${OUTFILE}"
 
 FILENAME=/scan/$1
 
-# Confirm file exists. The Git diff will return the names of files
-# that have been deleted as they are part of the change set
+# Set an exit code
+RC=0
+# Confirm file exists
 if [ -f "${FILENAME}" ]
 then
     if echo "${FILENAME}" | grep \.sh$  > /dev/null
@@ -103,7 +103,7 @@ then
             do_yaml_lint "${FILENAME}" >> "${OUTFILE}" || RC=1
     fi
 fi
-# Display output for capture on the terminal / in codebuild
+# Display output for capture on the terminal
 cat "${OUTFILE}"
 if [ "$RC" -eq 1 ]
 then
