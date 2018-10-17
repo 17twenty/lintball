@@ -20,7 +20,6 @@ do_yaml_lint()
 
 
     # Adding Ignore for the following conditions:
-    # - E2540: Pipeline stage name check
     # - E2541: pipeline stage action name check
     # - E3002: Making sure that resources properties are properly configured
     # - W1020: Warning on Sub function, we use the pattern: Fn::Sub "${AWS::StackName}-<some var>" everywhere
