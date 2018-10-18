@@ -3,6 +3,10 @@
 # Ignore posix non-compliance due to required use of here document
 set -e
 
+# Ensure we run the script from the app directory, not the mounted directory
+cwd=$(dirname "${0}")
+cd "${cwd}"
+
 # Work out if it's CFN or YAML
 do_yaml_lint()
 {
@@ -12,7 +16,7 @@ do_yaml_lint()
     # yaml code is not cloudformation
     echo "========="
     echo "yamllint running on ${yamlfile}"
-    yamllint -c yamllintrc "${yamlfile}"
+    yamllint -c "./yamllintrc" "${yamlfile}"
   else
     # yaml code is cloudformation
     echo "========="
@@ -96,7 +100,6 @@ then
     then
         echo "=========" >> "${OUTFILE}"
         echo "jsonlint running on ${FILENAME}" >> "${OUTFILE}"
-        # LD_LIBRARY_PATH=/tmp
         jsonlint "${FILENAME}" >> "${OUTFILE}" 2>&1 || RC=1
     fi
 
