@@ -1,6 +1,6 @@
 .DEFAULT_GOAL := help
 
-# Container Metadata
+# Docker Image Metadata
 MAJOR := 1
 MINOR := 0
 INCREMENTAL := 0
@@ -8,21 +8,29 @@ export IMAGE_NAME := lintball:$(MAJOR).$(MINOR).$(INCREMENTAL)
 export BUILD_DATE := $(shell date -u +"%Y-%m-%dT%H:%M:%SZ")
 export COMMIT_ID := 471240192401720
 
-# Passing Creds as environment variables
-# export AWS_ACCESS_KEY_ID := $(shell aws configure --profile ${PROFILE} get aws_access_key_id)
-# export AWS_SECRET_ACCESS_KEY := $(shell aws configure --profile ${PROFILE} get aws_secret_access_key)
-# export AWS_SESSION_TOKEN := $(shell aws configure --profile ${PROFILE} get aws_session_token)
-# export AWS_REGION := ap-southeast-2
+
 CURRENT_WORKING_DIRECTORY = $(shell pwd)
 
-
-run-dir: ## Run lintball against a directory
+.PHONY: run-dir
+run-dir: clean ## Run lintball against a directory
 	docker run
 
+
+
 .PHONY: build
-build: ## Docker Compose build Lintball
+build: clean ## Docker Compose build Lintball
 	docker-compose build
 
+
+clean: ## clean up before running
+	rm -f lintresults.*
+
+get_creds_local: ## Gets AWS creds based on profile
+	# Passing Creds as environment variables
+	export AWS_ACCESS_KEY_ID := $(shell aws configure --profile ${PROFILE} get aws_access_key_id)
+	export AWS_SECRET_ACCESS_KEY := $(shell aws configure --profile ${PROFILE} get aws_secret_access_key)
+	export AWS_SESSION_TOKEN := $(shell aws configure --profile ${PROFILE} get aws_session_token)
+	export AWS_REGION := ap-southeast-2
 
 # HELP
 # This will output the help for each task

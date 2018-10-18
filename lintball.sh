@@ -12,7 +12,7 @@ do_yaml_lint()
     # yaml code is not cloudformation
     echo "========="
     echo "yamllint running on ${yamlfile}"
-    yamllint -c /yamllintrc "${yamlfile}"
+    yamllint -c yamllintrc "${yamlfile}"
   else
     # yaml code is cloudformation
     echo "========="
@@ -20,13 +20,17 @@ do_yaml_lint()
 
 
     # Adding Ignore for the following conditions:
+    # - E2540: Pipeline stage name check
     # - E2541: pipeline stage action name check
-    # - E3002: Making sure that resources properties are properly configured
     # - W1020: Warning on Sub function, we use the pattern: Fn::Sub "${AWS::StackName}-<some var>" everywhere
     # - W3002: Warning: This code may only work with `package` cli command. Team is well aware of this limitation
     #
     # Reference of cfn-lint Rules: https://github.com/awslabs/cfn-python-lint/blob/master/docs/rules.md
     cfn-lint "${yamlfile}" -i E2541 E2540 W1020 W3002
+
+    # aws cli Validate template
+    # https://docs.aws.amazon.com/cli/latest/reference/cloudformation/validate-template.html
+    aws cloudformation validate-template --template-body file://"${yamlfile}"
   fi
 }
 
@@ -61,6 +65,11 @@ if ! [ -x "$(command -v yamllint)" ]; then
   exit 1
 fi
 
+if ! [ -x "$(command -v jsonlint)" ]; then
+  echo 'Error: jsonlint not found' >&2
+  exit 1
+fi
+
 
 # Assign "unique" filename to the results using timestamp
 OUTFILE="/scan/lintresults.$(date +%s%N)"
@@ -81,6 +90,14 @@ then
         echo "Shellcheck running on ${FILENAME}" >> "${OUTFILE}"
         # LD_LIBRARY_PATH=/tmp
         shellcheck "${FILENAME}" >> "${OUTFILE}" 2>&1 || RC=1
+    fi
+
+    if echo "${FILENAME}" | grep \.json$  > /dev/null
+    then
+        echo "=========" >> "${OUTFILE}"
+        echo "jsonlint running on ${FILENAME}" >> "${OUTFILE}"
+        # LD_LIBRARY_PATH=/tmp
+        jsonlint "${FILENAME}" >> "${OUTFILE}" 2>&1 || RC=1
     fi
 
     if echo "${FILENAME}" | grep -e \.py$ -e \.python$ > /dev/null
