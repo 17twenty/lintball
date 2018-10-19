@@ -12,6 +12,14 @@ export COMMIT_ID := 471240192401720
 
 CWD = $(shell pwd)
 PROFILE ?= dev
+REGION ?= ap-southeast-2
+
+
+.PHONY publish
+publish: ## publish to ecr
+	eval $(aws ecr get-login --no-include-email --region "${REGION}")
+	ecr_repository="${build_environment}-build-system-data-builder"
+	remote_docker_reference="${account_id}.dkr.ecr.${REGION}.amazonaws.com/${ecr_repository}:${tag}"
 
 .PHONY: tests
 tests: ## Run lints against test/test_files
@@ -27,7 +35,7 @@ test: ## Run Lint against 1 file eg: make test FILE=test.yaml
 	-e AWS_ACCESS_KEY_ID=$(shell aws configure --profile ${PROFILE} get aws_access_key_id) \
 	-e AWS_SECRET_ACCESS_KEY=$(shell aws configure --profile ${PROFILE} get aws_secret_access_key) \
 	-e AWS_SESSION_TOKEN=$(shell aws configure --profile ${PROFILE} get aws_session_token) \
-	-e AWS_DEFAULT_REGION=ap-southeast-2 \
+	-e AWS_DEFAULT_REGION=$(REGION) \
 	-v "$(CWD)/test:/scan" \
 	$(IMAGE_NAME) $(FILE)
 
