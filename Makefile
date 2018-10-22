@@ -1,28 +1,34 @@
 .DEFAULT_GOAL := help
 
-# Docker Image Metadata
+# Docker Image BUILD Metadata
 MAJOR := 1
 MINOR := 0
 INCREMENTAL := 0
 export IMAGE_NAME := lintball:$(MAJOR).$(MINOR).$(INCREMENTAL)
 export BUILD_DATE := $(shell date -u +"%Y-%m-%dT%H:%M:%SZ")
-export COMMIT_ID := 471240192401720
+export COMMIT_ID := $(git rev-parse --verify HEAD)
 
 
 
 CWD = $(shell pwd)
 PROFILE ?= dev
 REGION ?= ap-southeast-2
+ACCOUNT = $(shell aws sts get-caller-identity --output text --query "Account")
+BUILD_ENV ?= devci
 
 
-.PHONY publish
-publish: ## publish to ecr
+.PHONY: account_check
+account_check: ## grab account by ID
+	@echo "$(BUILD_ENV)"
+
+.PHONY: publish
+publish: ## Publish to ecr
 	eval $(aws ecr get-login --no-include-email --region "${REGION}")
-	ecr_repository="${build_environment}-build-system-data-builder"
-	remote_docker_reference="${account_id}.dkr.ecr.${REGION}.amazonaws.com/${ecr_repository}:${tag}"
+	ecr_repository="${BUILD_ENV}-build-system-data-builder"
+	remote_docker_reference="${ACCOUNT}.dkr.ecr.${REGION}.amazonaws.com/${ecr_repository}:${tag}"
 
 .PHONY: tests
-tests: ## Run lints against test/test_files
+tests: ## Run lints against all files within test/test_files
 	@for file in `ls test/test_files`; do \
 		echo "$$file"; \
 		$(MAKE) test FILE=test_files/$$file; \
@@ -40,7 +46,7 @@ test: ## Run Lint against 1 file eg: make test FILE=test.yaml
 	$(IMAGE_NAME) $(FILE)
 
 .PHONY: local-bash
-local-bash: ## Debug container
+local-bash: ## Launch container with entrypoint: bash
 	docker run --rm --entrypoint bash -v "$(CWD)/test:/scan" -it $(IMAGE_NAME)
 
 .PHONY: build
@@ -48,7 +54,7 @@ build: clean ## Docker Compose build Lintball
 	docker-compose build
 
 .PHONY: clean
-clean: ## clean up before running
+clean: ## Clean up
 	rm -f lintresults.*
 
 
