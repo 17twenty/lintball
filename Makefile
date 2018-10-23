@@ -28,12 +28,12 @@ publish: ## Publish to ecr
 tests: ## Run lints against all files within test/test_files
 	@for file in `ls test/test_files`; do \
 		echo "Running lintball on: $$file"; \
-		$(MAKE) test LINTFILE=test_files/.lintignore FILE=test_files/$$file; \
+		$(MAKE) test FILE=test_files/$$file LINTFILE=test_files/.lintignore; \
 	done
 
 
 .PHONY: test
-test: ## Run Lint against 1 file eg: make test FILE=test.yaml
+test: ## Run Lint against 1 file eg: make test FILE=test.yaml LINTFILE=.lintignore
 	docker run \
 	--rm \
 	-e AWS_ACCESS_KEY_ID=$(shell aws configure --profile ${PROFILE} get aws_access_key_id) \
@@ -41,7 +41,7 @@ test: ## Run Lint against 1 file eg: make test FILE=test.yaml
 	-e AWS_SESSION_TOKEN=$(shell aws configure --profile ${PROFILE} get aws_session_token) \
 	-e AWS_DEFAULT_REGION=$(REGION) \
 	-v "$(CWD)/test:/scan" \
-	$(IMAGE_NAME) $(FILE)
+	$(IMAGE_NAME) $(FILE) $(LINTFILE)
 
 
 .PHONY: local-bash

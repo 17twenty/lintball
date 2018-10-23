@@ -40,14 +40,18 @@ do_yaml_lint()
 
 usage()
 {
-  echo "Usage : $0 <file>"
+  echo "Usage : $0 <file> <.lintignore>"
   exit 1
 }
 
-file="${1}"
 
-if [ -z ${file+x} ]; then
+if [ -z ${1+x} ]; then
   echo "Error - filename not passed to the script"
+  usage
+fi
+
+if [ -z ${2+x} ]; then
+  echo "Error - lintignore not passed to the script"
   usage
 fi
 
@@ -86,23 +90,28 @@ OUTFILE="/scan/results/lintresults.$(date +%s%N)"
 # Ensure outfile is empty just in case it pre-exists
 true > "${OUTFILE}"
 
-FILENAME=/scan/${file}
-
-echo "==================="
+# Declare file and lintignore file
+FILE="${1}"
+LINTIGNOREFILE="${2}"
+FILENAME=/scan/${FILE}
+echo "=============================="
 echo "${FILENAME}"
-echo "==================="
+echo "=============================="
 
 # Set an exit code
 RC=0
 
 # Ignore if file is in lintignore
-# SHOULDIGNORE=$( cat /scan/"${LINTIGNOREFILE}" | grep "${FILENAME}")
-# if [[  -z "${SHOULDIGNORE}" ]]; then
-#   echo "hello"
-# fi
+if grep -q "${FILE}" /scan/"${LINTIGNOREFILE}"; then
+  echo "==========================="
+  echo "Found match for file in: ${LINTIGNOREFILE}"
+  echo "Ignoring File: ${FILE}"
+  echo "==========================="
+  exit $RC
+fi
 
 # Confirm file exists and not a lintresult outfile
-if [ -f "${FILENAME}" ]
+if [ -f "${FILENAME}" ] && [[ "${FILENAME}" != *"lintresults."* ]]
 then
     if echo "${FILENAME}" | grep \.sh$  > /dev/null
     then
