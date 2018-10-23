@@ -82,7 +82,7 @@ if [[ ! -d /scan/results ]]; then
   mkdir /scan/results
 fi
 # Assign "unique" filename to the results using timestamp
-OUTFILE="/scan/lintresults.$(date +%s%N)"
+OUTFILE="/scan/results/lintresults.$(date +%s%N)"
 # Ensure outfile is empty just in case it pre-exists
 true > "${OUTFILE}"
 
