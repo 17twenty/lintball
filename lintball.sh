@@ -44,7 +44,9 @@ usage()
   exit 1
 }
 
-if [ -z ${1+x} ]; then
+file="${1}"
+
+if [ -z ${file+x} ]; then
   echo "Error - filename not passed to the script"
   usage
 fi
@@ -75,16 +77,31 @@ if ! [ -x "$(command -v jsonlint)" ]; then
 fi
 
 
+# Create results folder if it does not exist, ignore error if already exists
+if [[ ! -d /scan/results ]]; then
+  mkdir /scan/results
+fi
 # Assign "unique" filename to the results using timestamp
 OUTFILE="/scan/lintresults.$(date +%s%N)"
 # Ensure outfile is empty just in case it pre-exists
 true > "${OUTFILE}"
 
-FILENAME=/scan/$1
+FILENAME=/scan/${file}
+
+echo "==================="
+echo "${FILENAME}"
+echo "==================="
 
 # Set an exit code
 RC=0
-# Confirm file exists
+
+# Ignore if file is in lintignore
+# SHOULDIGNORE=$( cat /scan/"${LINTIGNOREFILE}" | grep "${FILENAME}")
+# if [[  -z "${SHOULDIGNORE}" ]]; then
+#   echo "hello"
+# fi
+
+# Confirm file exists and not a lintresult outfile
 if [ -f "${FILENAME}" ]
 then
     if echo "${FILENAME}" | grep \.sh$  > /dev/null
