@@ -7,6 +7,16 @@ set -e
 cwd=$(dirname "${0}")
 cd "${cwd}"
 
+
+validate_template_if_aws_creds_are_valid()
+{
+  if aws sts get-caller-identity; then
+    aws cloudformation validate-template --template-body file://"${yamlfile}"
+  else
+    echo "Invalid creds, skipping aws cloudformation validate-template"
+  fi
+}
+
 # Work out if it's CFN or YAML
 do_yaml_lint()
 {
@@ -32,9 +42,7 @@ do_yaml_lint()
     # Reference of cfn-lint Rules: https://github.com/awslabs/cfn-python-lint/blob/master/docs/rules.md
     cfn-lint "${yamlfile}" -i E2541 E2540 W1020 W3002
 
-    # aws cli Validate template
-    # https://docs.aws.amazon.com/cli/latest/reference/cloudformation/validate-template.html
-    aws cloudformation validate-template --template-body file://"${yamlfile}"
+    validate_template_if_aws_creds_are_valid
   fi
 }
 
@@ -113,43 +121,44 @@ fi
 # Confirm file exists and not a lintresult outfile
 if [ -f "${FILENAME}" ] && [[ "${FILENAME}" != *"lintresults."* ]]
 then
-    if echo "${FILENAME}" | grep \.sh$  > /dev/null
-    then
-        #LD_LIBRARY_PATH is to get around an error running shellcheck on docker environments
-        echo "=========" >> "${OUTFILE}"
-        echo "Shellcheck running on ${FILENAME}" >> "${OUTFILE}"
-        # LD_LIBRARY_PATH=/tmp
-        shellcheck "${FILENAME}" >> "${OUTFILE}" 2>&1 || RC=1
-    fi
+  if echo "${FILENAME}" | grep \.sh$  > /dev/null
+  then
+    #LD_LIBRARY_PATH is to get around an error running shellcheck on docker environments
+    echo "=========" >> "${OUTFILE}"
+    echo "Shellcheck running on ${FILENAME}" >> "${OUTFILE}"
+    # LD_LIBRARY_PATH=/tmp
+    shellcheck "${FILENAME}" >> "${OUTFILE}" 2>&1 || RC=1
+  fi
 
-    if echo "${FILENAME}" | grep \.json$  > /dev/null
-    then
-        echo "=========" >> "${OUTFILE}"
-        echo "jsonlint running on ${FILENAME}" >> "${OUTFILE}"
-        jsonlint "${FILENAME}" >> "${OUTFILE}" 2>&1 || RC=1
-    fi
+  if echo "${FILENAME}" | grep \.json$  > /dev/null
+  then
+    echo "=========" >> "${OUTFILE}"
+    echo "jsonlint running on ${FILENAME}" >> "${OUTFILE}"
+    jsonlint "${FILENAME}" >> "${OUTFILE}" 2>&1 || RC=1
+  fi
 
-    if echo "${FILENAME}" | grep -e \.py$ -e \.python$ > /dev/null
-    then
-        echo "=========" >> "${OUTFILE}"
-        echo "pylint running on ${OUTFILE}" >> "${OUTFILE}"
+  if echo "${FILENAME}" | grep -e \.py$ -e \.python$ > /dev/null
+  then
+    echo "=========" >> "${OUTFILE}"
+    echo "pylint running on ${FILENAME}" >> "${OUTFILE}"
 
-        # Disable rule: E0401: Unable to import '<module>' (import-error)
-        # Reason:
-        #  - Lambdas are packaged in a separate process and uploaded to S3
-        #  - If we have this rule, we will have to run pip install on all lambdas, which is out of scope for this Script.
-        #
-        pylint "${FILENAME}" --disable E0401 >> "${OUTFILE}" 2>&1 || RC=1
-    fi
+    # Disable rule: E0401: Unable to import '<module>' (import-error)
+    # Reason:
+    #  - Lambdas are packaged in a separate process and uploaded to S3
+    #  - If we have this rule, we will have to run pip install on all lambdas, which is out of scope for this Script.
+    #
+    pylint "${FILENAME}" --disable E0401 >> "${OUTFILE}" 2>&1 || RC=1
+  fi
 
-
-    if echo "${FILENAME}" | grep -e \.yml$ -e \.yaml$ -e \.cfn$ -e \.template$ > /dev/null
-    then
-            do_yaml_lint "${FILENAME}" >> "${OUTFILE}" || RC=1
-    fi
+  if echo "${FILENAME}" | grep -e \.yml$ -e \.yaml$ -e \.cfn$ -e \.template$ > /dev/null
+  then
+    do_yaml_lint "${FILENAME}" >> "${OUTFILE}" || RC=1
+  fi
 fi
+
 # Display output for capture on the terminal
 cat "${OUTFILE}"
+
 if [ "$RC" -eq 1 ]
 then
     echo Linting tests result : FAIL
