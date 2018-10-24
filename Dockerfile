@@ -24,6 +24,7 @@ RUN mv shellcheck-stable/shellcheck /usr/bin/
 
 ADD yamllintrc /app/yamllintrc
 ADD lintball.sh /app/lintball.sh
+ADD lib /app/lib
 RUN chmod +x /app/lintball.sh
 
 ENTRYPOINT ["/app/lintball.sh"]

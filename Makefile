@@ -1,4 +1,5 @@
 .DEFAULT_GOAL := help
+.PHONY: publish tests test local-bash build clean dump help
 
 # Docker Image BUILD Metadata
 MAJOR := 1
@@ -18,13 +19,11 @@ ECR_REPO="lintball"
 ECR_TAG = $(MAJOR).$(MINOR).$(INCREMENTAL)
 
 
-.PHONY: publish
 publish: ## Publish to ecr
 	# eval $(aws ecr get-login --no-include-email --region "${REGION}")
 	remote_docker_reference="${ACCOUNT}.dkr.ecr.${REGION}.amazonaws.com/${ECR_REPO}:${ECR_TAG}"
 
 
-.PHONY: tests
 tests: ## Run lints against all files within test/test_files
 	@for file in `ls test/test_files`; do \
 		echo "Running lintball on: $$file"; \
@@ -32,7 +31,6 @@ tests: ## Run lints against all files within test/test_files
 	done
 
 
-.PHONY: test
 test: ## Run Lint against 1 file eg: make test FILE=test.yaml LINTFILE=.lintignore
 	docker run \
 	--rm \
@@ -44,20 +42,22 @@ test: ## Run Lint against 1 file eg: make test FILE=test.yaml LINTFILE=.lintigno
 	$(IMAGE_NAME) $(FILE) $(LINTFILE)
 
 
-.PHONY: local-bash
 local-bash: ## Launch container with entrypoint: bash
 	docker run --rm --entrypoint bash -v "$(CWD)/test:/scan" -it $(IMAGE_NAME)
 
 
-.PHONY: build
 build: clean ## Docker Compose build Lintball
 	docker-compose build
 
 
-.PHONY: clean
 clean: ## Clean up
 	rm -f lintresults.*
 
+
+dump:
+	@echo "IMAGE_NAME - $(IMAGE_NAME)"
+	@echo "BUILD_DATE - $(BUILD_DATE)"
+	@echo "COMMIT_ID - $(COMMIT_ID)"
 
 # HELP
 # This will output the help for each task

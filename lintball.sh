@@ -1,11 +1,16 @@
 #!/usr/bin/env bash
 # shellcheck disable=SC2039
 # Ignore posix non-compliance due to required use of here document
-set -e
+set -euo pipefail
+
+
 
 # Ensure we run the script from the app directory, not the mounted directory
 cwd=$(dirname "${0}")
 cd "${cwd}"
+
+source lib/dependencies.sh
+ensure_dependencies_are_installed
 
 # Work out if it's CFN or YAML
 do_yaml_lint()
@@ -40,7 +45,7 @@ do_yaml_lint()
 
 usage()
 {
-  echo "Usage : $0 <file> <.lintignore>"
+  echo "Usage : $0 <file> "
   exit 1
 }
 
@@ -50,65 +55,55 @@ if [ -z ${1+x} ]; then
   usage
 fi
 
-if [ -z ${2+x} ]; then
-  echo "Error - lintignore not passed to the script"
-  usage
-fi
 
-if ! [ -x "$(command -v shellcheck)" ]; then
-  echo 'Error: shellcheck not found' >&2
-  exit 1
-fi
+export WORKING_DIR="/scan"
+export LINTIGNORE_PATH="${WORKING_DIR}/.lintignore"
+export RESULTS_DIR="${WORKING_DIR}/results"
+mkdir -p "${RESULTS_DIR}"
 
-if ! [ -x "$(command -v pylint)" ]; then
-  echo 'Error: pylint not found' >&2
-  exit 1
-fi
+export OUTPUT_FILE_PATH="${RESULTS_DIR}/lintresults-$(date "+%Y-%m-%d-%H:%M")"
+# Create the file if it doesn't exist
+touch "${OUTPUT_FILE_PATH}"
 
-if ! [ -x "$(command -v cfn-lint)" ]; then
-  echo 'Error: cfn-lint not found' >&2
-  exit 1
-fi
-
-if ! [ -x "$(command -v yamllint)" ]; then
-  echo 'Error: yamllint not found' >&2
-  exit 1
-fi
-
-if ! [ -x "$(command -v jsonlint)" ]; then
-  echo 'Error: jsonlint not found' >&2
-  exit 1
-fi
-
-
-# Create results folder if it does not exist, ignore error if already exists
-if [[ ! -d /scan/results ]]; then
-  mkdir /scan/results
-fi
-# Assign "unique" filename to the results using timestamp
-OUTFILE="/scan/results/lintresults.$(date +%s%N)"
-# Ensure outfile is empty just in case it pre-exists
-true > "${OUTFILE}"
+echo "LINTIGNORE_PATH=${LINTIGNORE_PATH}"
+echo "WORKING_DIR=${WORKING_DIR}"
+echo "RESULTS_DIR=${RESULTS_DIR}"
+echo "OUTPUT_FILE_PATH=${OUTPUT_FILE_PATH}"
+ls -al "${OUTPUT_FILE_PATH}"
 
 # Declare file and lintignore file
 FILE="${1}"
-LINTIGNOREFILE="${2}"
-FILENAME=/scan/${FILE}
-echo "=============================="
-echo "${FILENAME}"
-echo "=============================="
+FILENAME="${WORKING_DIR}/${FILE}"
 
-# Set an exit code
+printf "\n\n======= LINTBALL ===========\n"
+echo "TESTING ARG FILE  =${FILE}"
+echo "CONTAINER FILENAME=${FILENAME}"
+ls -alf ${FILENAME}
+printf "\n==============================\n"
+
+# debug
+#echo "START FIND"
+#find "${WORKING_DIR}" -path "${WORKING_DIR}/.git" -prune -o -ls
+#echo "END FIND"
+
 RC=0
 
-# Ignore if file is in lintignore
-if grep -q "${FILE}" /scan/"${LINTIGNOREFILE}"; then
-  echo "==========================="
-  echo "Found match for file in: ${LINTIGNOREFILE}"
-  echo "Ignoring File: ${FILE}"
-  echo "==========================="
-  exit $RC
+# Does the given .lintignore file exist
+if [ -f "${LINTIGNORE_PATH}" ] ; then
+
+    echo "Found ${LINTIGNORE_PATH}"
+    # Ignore if file is in lintignore
+    if grep -q "${FILE}" "${LINTIGNORE_PATH}"; then
+      echo "==========================="
+      echo "Found match for file in: ${LINTIGNORE_PATH}"
+      echo "Ignoring File: ${FILE}"
+      echo "==========================="
+      exit $RC
+    fi
+else
+    echo "No ${LINTIGNORE_PATH} file found, ignoring"
 fi
+
 
 # Confirm file exists and not a lintresult outfile
 if [ -f "${FILENAME}" ] && [[ "${FILENAME}" != *"lintresults."* ]]
@@ -116,40 +111,41 @@ then
     if echo "${FILENAME}" | grep \.sh$  > /dev/null
     then
         #LD_LIBRARY_PATH is to get around an error running shellcheck on docker environments
-        echo "=========" >> "${OUTFILE}"
-        echo "Shellcheck running on ${FILENAME}" >> "${OUTFILE}"
+        echo "=========" >> "${OUTPUT_FILE_PATH}"
+        echo "Shellcheck running on ${FILENAME}" >> "${OUTPUT_FILE_PATH}"
         # LD_LIBRARY_PATH=/tmp
-        shellcheck "${FILENAME}" >> "${OUTFILE}" 2>&1 || RC=1
+        shellcheck "${FILENAME}" >> "${OUTPUT_FILE_PATH}" 2>&1 || RC=1
     fi
 
     if echo "${FILENAME}" | grep \.json$  > /dev/null
     then
-        echo "=========" >> "${OUTFILE}"
-        echo "jsonlint running on ${FILENAME}" >> "${OUTFILE}"
-        jsonlint "${FILENAME}" >> "${OUTFILE}" 2>&1 || RC=1
+        echo "=========" >> "${OUTPUT_FILE_PATH}"
+        echo "jsonlint running on ${FILENAME}" >> "${OUTPUT_FILE_PATH}"
+        jsonlint "${FILENAME}" >> "${OUTPUT_FILE_PATH}" 2>&1 || RC=1
     fi
 
     if echo "${FILENAME}" | grep -e \.py$ -e \.python$ > /dev/null
     then
-        echo "=========" >> "${OUTFILE}"
-        echo "pylint running on ${OUTFILE}" >> "${OUTFILE}"
+        echo "=========" >> "${OUTPUT_FILE_PATH}"
+        echo "pylint running on ${OUTPUT_FILE_PATH}" >> "${OUTPUT_FILE_PATH}"
 
         # Disable rule: E0401: Unable to import '<module>' (import-error)
         # Reason:
         #  - Lambdas are packaged in a separate process and uploaded to S3
         #  - If we have this rule, we will have to run pip install on all lambdas, which is out of scope for this Script.
         #
-        pylint "${FILENAME}" --disable E0401 >> "${OUTFILE}" 2>&1 || RC=1
+        pylint "${FILENAME}" --disable E0401 >> "${OUTPUT_FILE_PATH}" 2>&1 || RC=1
     fi
 
 
     if echo "${FILENAME}" | grep -e \.yml$ -e \.yaml$ -e \.cfn$ -e \.template$ > /dev/null
     then
-            do_yaml_lint "${FILENAME}" >> "${OUTFILE}" || RC=1
+            do_yaml_lint "${FILENAME}" >> "${OUTPUT_FILE_PATH}" || RC=1
     fi
 fi
 # Display output for capture on the terminal
-cat "${OUTFILE}"
+cat "${OUTPUT_FILE_PATH}"
+
 if [ "$RC" -eq 1 ]
 then
     echo Linting tests result : FAIL
