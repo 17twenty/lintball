@@ -18,7 +18,7 @@ docker run \
   -v "$PWD:/scan"  \
   -e DEBUG="false" \
   --rm             \
-  lintball:1.0.0 <list of changed files>
+  lintball:1.0.0 <space separated list of changed files>
   
   # e.g. 
   docker run -v $PWD:/scan -e DEBUG="false" --rm lintball:1.0.0 "${CHANGED_FILES}"

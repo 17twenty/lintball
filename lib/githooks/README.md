@@ -1,6 +1,6 @@
 # Overview
 
-This folder contains scripts for pipeline tests. 
+This folder contains scripts for pipeline quality (lint) tests. 
 
 See https://versent.atlassian.net/wiki/spaces/TCIP/pages/585203752/Linting
 
@@ -30,12 +30,13 @@ export REPO_PATH=/git/cip-config-mgmt
 ```
 
 Run the following script, to:
-+ Ensure the commit hook is executable
++ Copy the pre-commit hook to a local folder
++ Ensure the commit hook script is executable
 + Remove any existing pre-commit symlink
-+ symlink your pre-commit script into the .git repo
++ symlink your pre-commit script into the .git/hooks/ repo
 
 ```bash
-./create-local-pre-commit-hook.sh
+./create-local-pre-commit-hook.sh <path to local folder to put the pre-commit script in>
 ```
 
 Or, to create manually
