@@ -11,17 +11,23 @@ Can be used as a pre-commit hook, TODO, or part of your build.
 
 1. For files that should be excluded from lintine, add a ".lintignore" file in the root of the directory. See `ignoring files` below
 2. Run docker command
+3. Set the "DEBUG" environment variable to true, for more logging output
 
 ```bash
 docker run \
-  -v "$PWD:/scan" \
-  lintball:latest <your-file-to-lint>
+  -v "$PWD:/scan"  \
+  -e DEBUG="false" \
+  --rm             \
+  lintball:1.0.0 <list of changed files>
+  
+  # e.g. 
+  docker run -v $PWD:/scan -e DEBUG="false" --rm lintball:1.0.0 "${CHANGED_FILES}"
 ```
 
 
 ## Ignoring files
 To optionally exclude files from the `linting` process, provide a `.lintignore` file in the working directory.
-In the `.lintignore` file, add the relative path of the file.
+In the `.lintignore` file, add the `RELATIVE` path of the file.
 
 ```bash
 ./relative-path/to/the/ignored/file/x.sh
@@ -31,11 +37,7 @@ In the `.lintignore` file, add the relative path of the file.
 ```
 
 ## Lint Results
-The output is dumped in a `lintresults.XXXX` where X is the timestamp (you
-can't use the PID as it's always 1 in docker).
-
-If you don't want to accidentally commit your lint results, add `lintresults*` to your `.gitignore` file
-
+The output is dumped to std out.
 
 ## Building Lintball Docker Image
 
