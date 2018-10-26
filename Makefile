@@ -25,10 +25,7 @@ publish: ## Publish to ecr
 
 
 tests: ## Run lints against all files within test/test_files
-	@for file in `ls test/test_files`; do \
-		echo "Running lintball on: $$file"; \
-		$(MAKE) test FILE=test_files/$$file LINTFILE=test_files/.lintignore; \
-	done
+	$(MAKE) test FILE="$(shell ls test/test_files)"
 
 
 test: ## Run Lint against 1 file eg: make test FILE=test.yaml LINTFILE=.lintignore
@@ -38,8 +35,9 @@ test: ## Run Lint against 1 file eg: make test FILE=test.yaml LINTFILE=.lintigno
 	-e AWS_SECRET_ACCESS_KEY=$(shell aws configure --profile ${PROFILE} get aws_secret_access_key) \
 	-e AWS_SESSION_TOKEN=$(shell aws configure --profile ${PROFILE} get aws_session_token) \
 	-e AWS_DEFAULT_REGION=$(REGION) \
-	-v "$(CWD)/test:/scan" \
-	$(IMAGE_NAME) $(FILE) $(LINTFILE)
+	-e DEBUG="true" \
+	-v "$(CWD)/test/test_files:/scan" \
+	$(IMAGE_NAME) $(FILE)
 
 
 local-bash: ## Launch container with entrypoint: bash
