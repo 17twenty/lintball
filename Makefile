@@ -2,10 +2,8 @@
 .PHONY: publish tests test local-bash build clean dump help
 
 # Docker Image BUILD Metadata
-MAJOR := 1
-MINOR := 0
-INCREMENTAL := 0
-export IMAGE_NAME := lintball:$(MAJOR).$(MINOR).$(INCREMENTAL)
+VERSION := $(shell cat ./lintball_version)
+export IMAGE_NAME := lintball:$(VERSION)
 export BUILD_DATE := $(shell date -u +"%Y-%m-%dT%H:%M:%SZ")
 export COMMIT_ID := $(git rev-parse --verify HEAD)
 
@@ -16,7 +14,7 @@ REGION ?= ap-southeast-2
 ACCOUNT = $(shell aws sts get-caller-identity --output text --query "Account")
 BUILD_ENV ?= devci
 ECR_REPO="lintball"
-ECR_TAG = $(MAJOR).$(MINOR).$(INCREMENTAL)
+ECR_TAG = $(VERSION)
 
 
 publish: ## Publish to ecr
@@ -25,6 +23,7 @@ publish: ## Publish to ecr
 
 
 tests: ## Run lints against all files within test/test_files
+	@echo $(VERSION)
 	$(MAKE) test FILE="$(shell ls test/test_files)"
 
 
