@@ -5,7 +5,7 @@ Provides `linting` features, in a single execution, for the following file types
 + json (jsonlin)
 + .sh (shellcheck) 
 
-Can be used as a pre-commit hook, TODO, or part of your build.
+Can be used as a pre-commit hook, details below, or part of your build.
 
 ## Getting Started
 
@@ -51,6 +51,11 @@ make build
 make tests
 ```
 
-## TODO
+### Testing locally - manually
+```bash
+make build && ./lib/githooks/pre-commit
+```
 
-- publish to ecr
+### Enabling, as a pre-commit hook
+See the [README](./lib/githooks/README.md) for details on how to enable, as a pre-commit hook.
+

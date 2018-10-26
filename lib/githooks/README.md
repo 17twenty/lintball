@@ -9,6 +9,7 @@ To enable the pre-commit hook, follow the steps below, which describe how to:
 + Ensure the commit hook script is executable
 + Remove any existing pre-commit symlink
 + symlink your pre-commit script into the .git/hooks/ repo
++ toggle debug logging output on the linting script
 
 ###  Clone this repo locally
 ```bash
@@ -40,11 +41,15 @@ e.g. To create a 'hooks' folder, containing your pre-commit script...
   Created symlink: 
   lrwxr-xr-x  1 myuser  staff  58 Oct 26 11:06 /my/project/to/be/linted/.git/hooks/pre-commit@ -> /my/project/to/be/linted/hooks/pre-commit
 ```
+nb: You may want to add the created folder, e.g. hooks, to your .gitignore file
 
 + Verify the githoook
 ```bash
 ls -alF /my/project/to/be/linted/.git/hooks/pre-commit
 ```
+
+### Debug output toggle
+To enable debug logging, change the docker environment variable, in the [pre-commit](./pre-commit) script to "true".
 
 #### Versent internal link
 See https://versent.atlassian.net/wiki/spaces/TCIP/pages/585203752/Linting

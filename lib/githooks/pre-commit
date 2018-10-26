@@ -69,7 +69,7 @@ CHANGED_FILES="$(git diff-index --cached --name-only "$git_against")"
 dump_changed_files ${git_against}
 
 #TODO - @muz - source in the lintball version from an external file (shared with the Makefile, to ensure version is in sync)
-docker run -v $PWD:/scan -e DEBUG="false" --rm lintball:1.0.0 "${CHANGED_FILES}"
+docker run -v $PWD:/scan -e DEBUG="true" --rm lintball:1.0.0 "${CHANGED_FILES}"
 
 echo "RC=${RC}"
 

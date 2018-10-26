@@ -1,4 +1,5 @@
 lintresults.*
 .idea
 *.iml
+hooks/
 
