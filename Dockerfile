@@ -22,8 +22,9 @@ RUN curl -O "https://storage.googleapis.com/shellcheck/shellcheck-stable.linux.x
 RUN tar -xvf shellcheck-stable.linux.x86_64.tar.xz
 RUN mv shellcheck-stable/shellcheck /usr/bin/
 
-ADD yamllintrc /app/yamllintrc
+ADD lintball-yamllintrc /app/lintball-yamllintrc
 ADD lintball.sh /app/lintball.sh
+ADD lib /app/lib
 RUN chmod +x /app/lintball.sh
 
 ENTRYPOINT ["/app/lintball.sh"]
