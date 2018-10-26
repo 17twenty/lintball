@@ -21,9 +21,14 @@ handle()
 
     if head "${FILENAME}"  | grep "AWSTemplateFormatVersion" > /dev/null
     then
-      log "Invoking cfn-lint on [${FILENAME}]"
-      cfn-lint "${FILENAME}" -i E2541 E2540 W1020 W3002 2>&1
-      RC=${?}
+      log "Invoking aws cloudformation validate-template on [${FILENAME}]"
+
+      if aws sts get-caller-identity; then
+        echo "TODO aws cloudformation validate-template --template-body file://\"${FILENAME}\""
+        RC=${?}
+      else
+        echo "Invalid creds, skipping aws cloudformation validate-template"
+      fi
     fi
   fi
   exit "${RC}"

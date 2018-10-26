@@ -1,3 +1,5 @@
 #!/bin/bash
 
-z=y
+declare x="y"
+echo "${x}"
+

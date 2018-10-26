@@ -2,47 +2,52 @@
 
 This folder contains scripts for pipeline quality (lint) tests. 
 
-See https://versent.atlassian.net/wiki/spaces/TCIP/pages/585203752/Linting
+The docker container contains several linting tools that can be invoked in standalone mode, or by a git pre-commit hook.
 
-## pre-commit hook
-
-### pre-requisites
-#### TODO - Move the scripts to docker to remove local dependencies
-#### TODO - Strategy required for which files are in scope for linting. All files? Files changed in this commit, etc...
-
-See [linttests.sh](./linttests.sh) and the Versent [linting](https://versent.atlassian.net/wiki/spaces/TCIP/pages/585203752/Linting#Linting-LintingonGITrepositories) page for details of:
-+ Lint tools required
-+ Installation instructions
-
-### Script installation
-For every repository with linting configured, you will find a pre-commit script called  
-
-```
-[ repository ]/tests/pre-commit
-```
-
-Turn the pre-commit script into a git hook by following the instructions below...
-
-### Enable pre-commit locally
-```
-# Set REPO_PATH to be the full path to your repo... 
-export REPO_PATH=/git/cip-config-mgmt
-```
-
-Run the following script, to:
+To enable the pre-commit hook, follow the steps below, which describe how to: 
 + Copy the pre-commit hook to a local folder
 + Ensure the commit hook script is executable
 + Remove any existing pre-commit symlink
 + symlink your pre-commit script into the .git/hooks/ repo
 
+###  Clone this repo locally
 ```bash
-./create-local-pre-commit-hook.sh <path to local folder to put the pre-commit script in>
+git clone git@github.com:Versent/lintball.git
 ```
 
-Or, to create manually
+### Build the lintball image
 ```bash
-chmod +x ${REPO_PATH}/tests/pre-commit
-rm ${REPO_PATH}/.git/hooks/pre-commit
-ln -s ${REPO_PATH}/tests/pre-commit ${REPO_PATH}/.git/hooks/pre-commit
-
+  /tmp> cd /path/to/cloned/lintball
+  /path/to/cloned/lintball> make build
+  
+  # verify your lintball docker image built
+  docker images | grep lintball
 ```
+
+### Install the pre-commit script and hook
++ cd to the git project you would like to have linted before every commit
+```bash
+  /tmp> cd /my/project/to/be/linted>
+  /my/project/to/be/linted>
+```
+
++ Run the script to copy the pre commit script and symbolic link into your existing project
+e.g. To create a 'hooks' folder, containing your pre-commit script... 
+```bash
+  /my/project/to/be/linted> /path/to/cloned/lintball/lib/githooks/create-local-pre-commit-hook.sh  hooks
+  
+  #output
+  Created symlink: 
+  lrwxr-xr-x  1 myuser  staff  58 Oct 26 11:06 /my/project/to/be/linted/.git/hooks/pre-commit@ -> /my/project/to/be/linted/hooks/pre-commit
+```
+
++ Verify the githoook
+```bash
+ls -alF /my/project/to/be/linted/.git/hooks/pre-commit
+```
+
+#### Versent internal link
+See https://versent.atlassian.net/wiki/spaces/TCIP/pages/585203752/Linting
+
+
+
