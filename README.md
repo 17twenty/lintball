@@ -1,9 +1,11 @@
 # Lintball
+
 Provides `linting` features, in a single execution, for the following file types:
+
 + yaml, yml (yamllint)
 + cfn (cfnlint) - TODO cfnnag
 + json (jsonlin)
-+ .sh (shellcheck) 
++ .sh (shellcheck)
 
 Can be used as a pre-commit hook, details below, or part of your build.
 
@@ -19,13 +21,13 @@ docker run \
   -e DEBUG="false" \
   --rm             \
   lintball:1.0.0 <space separated list of changed files>
-  
-  # e.g. 
+
+  # e.g.
   docker run -v $PWD:/scan -e DEBUG="false" --rm lintball:1.0.0 "${CHANGED_FILES}"
 ```
 
-
 ## Ignoring files
+
 To optionally exclude files from the `linting` process, provide a `.lintignore` file in the working directory.
 In the `.lintignore` file, add the `RELATIVE` path of the file.
 
@@ -37,6 +39,7 @@ In the `.lintignore` file, add the `RELATIVE` path of the file.
 ```
 
 ## Lint Results
+
 The output is dumped to std out.
 
 ## Building Lintball Docker Image
@@ -52,10 +55,11 @@ make tests
 ```
 
 ### Testing locally - manually
+
 ```bash
 make build && ./lib/githooks/pre-commit
 ```
 
 ### Enabling, as a pre-commit hook
-See the [README](./lib/githooks/README.md) for details on how to enable, as a pre-commit hook.
 
+See the [README](./lib/githooks/README.md) for details on how to enable, as a pre-commit hook.
