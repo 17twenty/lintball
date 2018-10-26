@@ -36,7 +36,7 @@ debug "LINTIGNORE_PATH=${LINTIGNORE_PATH}"
 
 RC=0
 
-declare INPUT_FILES=${@}
+declare INPUT_FILES=("${@}")
 declare PROCESS_FILE_FLAG=""
 
 while read -r FILE
@@ -47,7 +47,7 @@ do
 
   if [ -f "${FILENAME}" ]
   then
-    debug "$(ls -alF ${FILENAME})"
+    debug "$(ls -alF "${FILENAME}")"
   fi
 
   # Does the given .lintignore file exist
@@ -80,7 +80,7 @@ do
     then
       for linter in ./lib/linters/*.sh
       do
-        debug "Testing [${FILENAME}] against Linter [$(basename ${linter})]"
+        debug "Testing [\"${FILENAME}\"] against Linter [$(basename "${linter}")]"
         set +e
         ${linter} "${FILENAME}" || RC=$?
         set -e
@@ -97,7 +97,7 @@ done <<< "${INPUT_FILES}"
 
 
 # Display output for capture on the terminal
-printf "\n${SEP}\n"
+printf "\\n %s \\n" "${SEP}"
 if [ "$RC" -eq 1 ]
 then
     # Echo to stderr (in subshell, to prevent issues with current shell)
@@ -106,6 +106,6 @@ else
     echo ""
     log "${RESULT_PREFIX} PASS"
 fi
-printf "${SEP}\n\n"
+printf "%s\\n\\n" "${SEP}"
 
 exit ${RC}
