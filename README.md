@@ -102,3 +102,11 @@ make publish
 export AWS_PROFILE=build
 make publish
 ```
+
+### Creating new Lintball ECR repo
+
+```bash
+# Following Command assumes you have valid AWS creds, please use amp2aws to generate valid creds
+export AWS_PROFILE=<aws profile>
+make create-ecr-repo
+```
