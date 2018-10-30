@@ -87,7 +87,15 @@ guide: [Semantic Versioing](https://semver.org/)
 2. All Changes must be PR'd
 3. Only master should be published
 
-Publishing update:
+#### Publish update to DEV for test
+
+```bash
+# Following Command assumes you have valid AWS creds, please use amp2aws to generate valid creds
+export AWS_PROFILE=dev
+make publish
+```
+
+#### Publishing update to PROD
 
 ```bash
 # Following Command assumes you have valid AWS creds, please use amp2aws to generate valid creds
