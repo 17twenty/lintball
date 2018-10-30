@@ -2,11 +2,14 @@
 .PHONY: publish tests test local-bash build clean dump help ecr-login
 
 # Docker Image BUILD Metadata
-VERSION := $(shell cat ./lintball_version)
+export VERSION := $(shell cat ./lintball_version)
 export IMAGE_NAME := lintball:$(VERSION)
 export BUILD_DATE := $(shell date -u +"%Y-%m-%dT%H:%M:%SZ")
-export COMMIT_ID := $(git rev-parse --verify HEAD)
+export LINTBALL_COMMIT_ID := $(git rev-parse --verify HEAD)
 
+ENV_FILE?=.env
+include $(ENV_FILE)
+export $(shell sed 's/=.*//' $(ENV_FILE))
 
 CWD = $(shell pwd)
 CFN_OUTPUT_DIR = output
@@ -38,11 +41,30 @@ test: ## Run Lint against 1 file eg: make test FILE=test.yaml LINTFILE=.lintigno
 	-v "$(CWD)/test/test_files:/scan" \
 	$(IMAGE_NAME) $(FILE)
 
+lint-git-changes: ## Instead of passing names / shared folder to the container, pull down the changes from a git repo
+	docker run \
+	-e GIT_HOST=$(GIT_HOST) \
+	-e GIT_OAUTH_TOKEN=$(GIT_OAUTH_TOKEN) \
+	-e GIT_OWNER=$(GIT_OWNER) \
+	-e GIT_REPO_NAME=$(GIT_REPO_NAME) \
+	-e GIT_BRANCH=$(GIT_BRANCH) \
+	-e GIT_COMMIT=$(GIT_COMMIT) \
+	-e GIT_URI="https://$(GIT_OAUTH_TOKEN)@$(GIT_HOST)/$(GIT_OWNER)/$(GIT_REPO_NAME).git" \
+	-e DEBUG="true" \
+	--rm \
+	$(IMAGE_NAME)
+#	--entrypoint env \
+
 test-cfn: ## Run cfn-lint against cloudformation
 	cfn-lint cloudformation/lintball-ecr.cfn
 
 local-bash: ## Launch container with entrypoint: bash
-	docker run --rm --entrypoint bash -v "$(CWD)/test:/scan" -it $(IMAGE_NAME)
+	docker run \
+	  --rm \
+	  --entrypoint bash \
+	  -v "$(CWD)/test:/scan" \
+	  -it \
+	  $(IMAGE_NAME)
 
 
 build: clean ## Docker Compose build Lintball
@@ -53,15 +75,19 @@ clean: ## Clean up
 
 create-ecr-repo: test-cfn ## Create Lintball's AWS ECR repo
 	aws cloudformation deploy \
-	--template-file "cloudformation/lintball-ecr.cfn" \
-	--stack-name "lintball"
-
+	  --template-file "cloudformation/lintball-ecr.cfn" \
+	  --stack-name "lintball"
 
 dump:
-	@echo "IMAGE_NAME - $(IMAGE_NAME)"
-	@echo "BUILD_DATE - $(BUILD_DATE)"
-	@echo "COMMIT_ID - $(COMMIT_ID)"
-
+	@echo "IMAGE_NAME          - $(IMAGE_NAME)"
+	@echo "BUILD_DATE          - $(BUILD_DATE)"
+	@echo "LINTBALL_COMMIT_ID  - $(LINTBALL_COMMIT_ID)"
+	@echo "GIT_HOST            - $(GIT_HOST)"
+	@echo "GIT_OAUTH_TOKEN     - $(GIT_OAUTH_TOKEN)"
+	@echo "GIT_OWNER           - $(GIT_OWNER)"
+	@echo "GIT_BRANCH          - $(GIT_BRANCH)"
+	@echo "GIT_COMMIT          - $(GIT_COMMIT)"
+	@echo "GIT_REPO_NAME       - $(GIT_REPO_NAME)"
 
 ecr-login:
 	@eval $(aws ecr --profile $(PROFILE) get-login --no-include-email --region "${REGION}")

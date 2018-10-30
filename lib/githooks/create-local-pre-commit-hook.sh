@@ -7,6 +7,10 @@ set -euo pipefail
 declare SCRIPT_PATH=""
 SCRIPT_PATH="$(dirname "${BASH_SOURCE[0]}")"
 
+## Get the version file path, regardless of where the surrounding script is run from
+declare VERSION_FILE_PATH="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/../../lintball_version"
+export LINTBALL_VERSION=$(cat ${VERSION_FILE_PATH})
+
 usage()
 {
   printf "${1}\n"
@@ -32,7 +36,12 @@ declare PRE_COMMIT_HOOK_SCRIPT_PATH="${PWD}/${PATH_TO_PRE_COMMIT_HOOK_FOLDER}/${
 echo "PRE_COMMIT_HOOK_SCRIPT_PATH=${PRE_COMMIT_HOOK_SCRIPT_PATH}"
 
 mkdir -p ${PATH_TO_PRE_COMMIT_HOOK_FOLDER}
-cp "${SCRIPT_PATH}/${PRE_COMMIT_HOOK_SCRIPT_BASENAME}" "${PRE_COMMIT_HOOK_SCRIPT_PATH}"
+
+# Transform the outgoing script with sed, so that the docker version of lintball is correct
+cat "${SCRIPT_PATH}/${PRE_COMMIT_HOOK_SCRIPT_BASENAME}" \
+   | sed  "s/<\[\[ LINTBALL_VERSION \]\]>/${LINTBALL_VERSION}/g" \
+   > "${PRE_COMMIT_HOOK_SCRIPT_PATH}"
+
 ls -alF "${PRE_COMMIT_HOOK_SCRIPT_PATH}"
 
 declare BASE_PATH=""

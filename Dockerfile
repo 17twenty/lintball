@@ -4,7 +4,8 @@ WORKDIR /scan
 
 # node, it's needed for jsonlint
 RUN curl -L https://rpm.nodesource.com/setup_10.x | bash -
-RUN yum install -y nodejs
+RUN yum install -y nodejs git
+
 # Pip
 RUN curl -O https://bootstrap.pypa.io/get-pip.py
 RUN /bin/bash -c "python get-pip.py"

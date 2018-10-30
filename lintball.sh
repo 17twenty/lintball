@@ -3,6 +3,12 @@
 # Ignore posix non-compliance due to required use of here document
 set -euo pipefail
 
+usage()
+{
+  echo "Usage : $0 <file(s)> "
+  exit "${1:-0}"
+}
+
 declare RESULT_PREFIX="Lintball result :"
 declare LINTIGNORE_FILENAME=".lintignore"
 
@@ -10,33 +16,46 @@ declare LINTIGNORE_FILENAME=".lintignore"
 cwd=$(dirname "${0}")
 cd "${cwd}"
 
+#shellcheck disable=SC1091
 source lib/common.sh
+
+#shellcheck disable=SC1091
 source lib/dependencies.sh
 ensure_dependencies_are_installed
 
+declare FILENAMES="${1:-}"
+declare WORKING_DIR="/scan"
+declare INPUT_FILES=("${@}")
 
-usage()
-{
-  echo "Usage : $0 <file> "
-  exit 1
-}
+# If the user passes in a git address, clone the repo and lint the changed files
+# (else, the filenames are expected as args)
+if [ -n "${GIT_URI:-""}" ]; then
+  WORKING_DIR="${WORKING_DIR}/git"
+  FILENAMES="TODO"
+  git clone "${GIT_URI}" "${WORKING_DIR}"
 
-
-if [ -z ${1+x} ]; then
-  echo "Error - filename not passed to the script"
-  usage
+  # Checkout the branch we are interested in (in a subshell, so as not to affect PWD)
+  $(cd "${WORKING_DIR}" && git checkout "${GIT_COMMIT}" -B "${GIT_BRANCH}")
+  #printf  "running: git checkout \"${GIT_COMMIT}\" -B \"${GIT_BRANCH}\"\nOn workdir ${WORKING_DIR}\n"
+  FILENAMES=$(cd "${WORKING_DIR}" && git diff --name-only "${GIT_BRANCH}" "$(git merge-base "${GIT_BRANCH}" master)")
+  INPUT_FILES="${FILENAMES}"
 fi
 
-declare WORKING_DIR="/scan"
+
+if [ -z ${FILENAMES+x} ]; then
+  echo "Error - filename(s) not passed to the script"
+  usage 1
+fi
+
 declare LINTIGNORE_PATH="${WORKING_DIR}/${LINTIGNORE_FILENAME}"
 echo "DEBUG = ${DEBUG}"
 #export DEBUG="false"
 debug "WORKING_DIR=${WORKING_DIR}"
 debug "LINTIGNORE_PATH=${LINTIGNORE_PATH}"
+debug "${WORKING_DIR} files: $(ls -alF ${WORKING_DIR})"
 
 RC=0
 
-declare INPUT_FILES=("${@}")
 declare PROCESS_FILE_FLAG=""
 
 while read -r FILE
@@ -64,12 +83,11 @@ do
       PROCESS_FILE_FLAG="true"
     fi
   else
-    log "No ${LINTIGNORE_PATH} file found, ignoring"
+    log "No ${LINTIGNORE_PATH} file found, ${FILENAME} WILL be linted..."
     PROCESS_FILE_FLAG="true"
   fi
 
   if [[ "${PROCESS_FILE_FLAG}" == "true" ]]; then
-    debug "PROCESS FILE - [${FILENAME}]"
 
     echo ""
     log "======= LINTBALL ${FILE} ==========="
@@ -97,7 +115,7 @@ done <<< "${INPUT_FILES}"
 
 
 # Display output for capture on the terminal
-printf "\\n %s \\n" "${SEP}"
+printf "\\n%s\\n" "${SEP}"
 if [ "$RC" -eq 1 ]
 then
     # Echo to stderr (in subshell, to prevent issues with current shell)

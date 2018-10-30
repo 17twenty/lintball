@@ -22,9 +22,11 @@ dump_changed_files()
 
 check_prerequisites()
 {
-  # lintball:1.0.0
+  #e.g. lintball:1.0.0
   local IMAGE_NAME="lintball"
-  local IMAGE_TAG="1.0.0"
+
+  # This version value will be updated dynamically in the created pre-commit hook
+  local IMAGE_TAG="<[[ LINTBALL_VERSION ]]>"
 
   echo "Checking local docker env for image - ${IMAGE_NAME}:${IMAGE_TAG}"
 
@@ -79,3 +81,5 @@ then
   exit 1
 fi
 exit 0
+
+#   Using docker image lintball-<[[ LINTBALL_VERSION ]]>
