@@ -63,3 +63,34 @@ make build && ./lib/githooks/pre-commit
 ### Enabling, as a pre-commit hook
 
 See the [README](./lib/githooks/README.md) for details on how to enable, as a pre-commit hook.
+
+## Version Control
+
+Lintball is currently being version controlled by the file: "lintball_version"
+
+### Updating version
+
+If you are:
+
+1. Adding / Removing rules to lintball linters
+2. Updating one of the linters to a newer version
+3. Adding a new linter
+4. Removing a linter
+
+Please update the version file
+
+guide: [Semantic Versioing](https://semver.org/)
+
+### Publishing Update
+
+1. Any changes have to be tested
+2. All Changes must be PR'd
+3. Only master should be published
+
+Publishing update:
+
+```bash
+# Following Command assumes you have valid AWS creds, please use amp2aws to generate valid creds
+export AWS_PROFILE=build
+make publish
+```
