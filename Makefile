@@ -14,7 +14,7 @@ PROFILE ?= dev
 REGION ?= ap-southeast-2
 ACCOUNT = $(shell aws sts get-caller-identity --output text --query "Account")
 BUILD_ENV ?= devci
-ECR_REPO = "${ACCOUNT}.dkr.ecr.${REGION}.amazonaws.com/${PROFILE}-$(IMAGE_NAME)"
+ECR_REPO = "${ACCOUNT}.dkr.ecr.${REGION}.amazonaws.com/$(IMAGE_NAME)"
 
 
 publish: tests ecr-login ## Publish to ecr
