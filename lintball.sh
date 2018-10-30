@@ -76,7 +76,7 @@ do
     # Ignore if file is in lintignore
     if grep -q "${FILE}" "${LINTIGNORE_PATH}"; then
       log "${SEP}"
-      log "Found match for file in: ${LINTIGNORE_PATH}"
+      log "Found match for "${FILENAME}" in: ${LINTIGNORE_PATH}"
       log "${RESULT_PREFIX} IGNORE"
       log "${SEP}"
     else
