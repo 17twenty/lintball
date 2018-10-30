@@ -54,7 +54,7 @@ clean: ## Clean up
 create-ecr-repo: test-cfn ## Create Lintball's AWS ECR repo
 	aws cloudformation deploy \
 	--template-file "cloudformation/lintball-ecr.cfn" \
-	--stack-name "$(PROFILE)-lintball"
+	--stack-name "lintball"
 
 
 dump:
