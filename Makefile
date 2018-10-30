@@ -1,5 +1,5 @@
 .DEFAULT_GOAL := help
-.PHONY: publish tests test local-bash build clean dump help
+.PHONY: publish tests test local-bash build clean dump help ecr-login
 
 # Docker Image BUILD Metadata
 VERSION := $(shell cat ./lintball_version)
@@ -9,17 +9,17 @@ export COMMIT_ID := $(git rev-parse --verify HEAD)
 
 
 CWD = $(shell pwd)
+CFN_OUTPUT_DIR = output
 PROFILE ?= dev
 REGION ?= ap-southeast-2
 ACCOUNT = $(shell aws sts get-caller-identity --output text --query "Account")
 BUILD_ENV ?= devci
-ECR_REPO="lintball"
-ECR_TAG = $(VERSION)
+ECR_REPO = "${ACCOUNT}.dkr.ecr.${REGION}.amazonaws.com/${PROFILE}-$(IMAGE_NAME)"
 
 
-publish: ## Publish to ecr
-	# eval $(aws ecr get-login --no-include-email --region "${REGION}")
-	remote_docker_reference="${ACCOUNT}.dkr.ecr.${REGION}.amazonaws.com/${ECR_REPO}:${ECR_TAG}"
+publish: tests ecr-login ## Publish to ecr
+	docker tag $(IMAGE_NAME) $(ECR_REPO) \
+	&& docker push $(ECR_REPO)
 
 
 tests: ## Run lints against all files within test/test_files
@@ -38,6 +38,8 @@ test: ## Run Lint against 1 file eg: make test FILE=test.yaml LINTFILE=.lintigno
 	-v "$(CWD)/test/test_files:/scan" \
 	$(IMAGE_NAME) $(FILE)
 
+test-cfn: ## Run cfn-lint against cloudformation
+	cfn-lint cloudformation/lintball-ecr.cfn
 
 local-bash: ## Launch container with entrypoint: bash
 	docker run --rm --entrypoint bash -v "$(CWD)/test:/scan" -it $(IMAGE_NAME)
@@ -46,15 +48,23 @@ local-bash: ## Launch container with entrypoint: bash
 build: clean ## Docker Compose build Lintball
 	docker-compose build
 
-
 clean: ## Clean up
 	rm -f lintresults.*
+
+create-ecr-repo: test-cfn ## Create Lintball's AWS ECR repo
+	aws cloudformation deploy \
+	--template-file "cloudformation/lintball-ecr.cfn" \
+	--stack-name "$(PROFILE)-lintball"
 
 
 dump:
 	@echo "IMAGE_NAME - $(IMAGE_NAME)"
 	@echo "BUILD_DATE - $(BUILD_DATE)"
 	@echo "COMMIT_ID - $(COMMIT_ID)"
+
+
+ecr-login:
+	@eval $(aws ecr --profile $(PROFILE) get-login --no-include-email --region "${REGION}")
 
 # HELP
 # This will output the help for each task
