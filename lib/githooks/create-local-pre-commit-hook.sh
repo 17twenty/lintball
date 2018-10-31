@@ -7,7 +7,7 @@ set -euo pipefail
 declare SCRIPT_PATH=""
 SCRIPT_PATH="$(dirname "${BASH_SOURCE[0]}")"
 
-## Get the version file path, regardless of where the surrounding script is run from
+## Get the "version" file canonical path, regardless of where the surrounding script is run from
 declare VERSION_FILE_PATH="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/../../lintball_version"
 export LINTBALL_VERSION=$(cat ${VERSION_FILE_PATH})
 
