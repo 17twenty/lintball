@@ -89,24 +89,33 @@ guide: [Semantic Versioing](https://semver.org/)
 
 #### Publish update to DEV for test
 
+You don't need to declare a `PROFILE` parameter when publishing a test image
+
 ```bash
 # Following Command assumes you have valid AWS creds, please use amp2aws to generate valid creds
-export AWS_PROFILE=dev
 make publish
 ```
 
 #### Publishing update to PROD
 
+The `PROFILE` parameter refers to your amp2aws profile (build, dev, sit, onb, etc).
+
+Lintball Prod images will be registered in the AWS build account.
+
 ```bash
 # Following Command assumes you have valid AWS creds, please use amp2aws to generate valid creds
-export AWS_PROFILE=build
-make publish
+make publish PROFILE=build
 ```
 
 ### Creating new Lintball ECR repo
 
+Lintball will be using AWS ECR to register and pull images.
+
+The `PROFILE` parameter refers to your amp2aws profile (build, dev, sit, onb, etc).
+
+Lintball Prod images will be registered in the AWS build account.
+
 ```bash
 # Following Command assumes you have valid AWS creds, please use amp2aws to generate valid creds
-export AWS_PROFILE=<aws profile>
-make create-ecr-repo
+make create-ecr-repo PROFILE=<your profile>
 ```
