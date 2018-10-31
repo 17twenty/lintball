@@ -27,7 +27,9 @@ publish: tests ecr-login ## Publish to ecr
 
 tests: ## Run lints against all files within test/test_files
 	@echo $(VERSION)
-	$(MAKE) test FILE="$(shell ls test/test_files)"
+	@for file in `ls test/test_files`; do \
+		$(MAKE) test FILE="$$file"; \
+	done
 
 
 test: ## Run Lint against 1 file eg: make test FILE=test.yaml LINTFILE=.lintignore
@@ -39,7 +41,7 @@ test: ## Run Lint against 1 file eg: make test FILE=test.yaml LINTFILE=.lintigno
 	-e AWS_DEFAULT_REGION=$(REGION) \
 	-e DEBUG="true" \
 	-v "$(CWD)/test/test_files:/scan" \
-	$(IMAGE_NAME) $(FILE)
+	-i "$(IMAGE_NAME)" $(FILE)
 
 lint-git-changes: ## Instead of passing names / shared folder to the container, pull down the changes from a git repo
 	docker run \

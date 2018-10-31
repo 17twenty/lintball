@@ -8,16 +8,19 @@ Provides `linting` features, in a single execution, for the following file types
 + .sh (shellcheck)
 
 ## Lintball operation modes
+
 The Lintball container can be used in 2 modes
 
 + Option 1 - Preferred - Pass the name of all changed files to Lintball. The Lintball container will execute the `Linters` against each changed file.
   + e.g. As a local pre-commit hook or a build pipeline (aws code build/jenkins/etc...), where a list of changed filenames is passed into the Lintball process)
 
 + Option 2 - Pass the details of the git repo / git branch / git commit / etc... to the Lintball container. Lintball will clone the repo locally, checkout the branch etc... and apply the `Linters`.
+
 (nb: Option 2 is provided as a temporary fix to get around this [issue](https://github.com/aws/aws-codebuild-docker-images/issues/76) )
 Details of using option 2 are provided at the end of this README.
 
 ## Option 1
+
 ### Getting Started
 
 1. For files that should be excluded from linting, add a ".lintignore" file in the root of the directory. See `ignoring files` below
@@ -143,4 +146,3 @@ GIT_BRANCH=feature/big-change
 GIT_COMMIT=4b68emycommitide21e785d3a4
 GIT_REPO_NAME=my-repo
 ```
-
