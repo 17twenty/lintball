@@ -128,7 +128,7 @@ make publish
 
 #### Publishing update to PROD
 
-The `PROFILE` parameter refers to your amp2aws profile (build, dev, sit, onb, etc).
+The `PROFILE` parameter refers to your AWS credential profile.
 
 Lintball Prod images will be registered in the AWS build account.
 
@@ -139,9 +139,9 @@ make publish PROFILE=build
 
 ### Creating new Lintball ECR repo
 
-Lintball will be using AWS ECR to register and pull images.
+Lintall can be registered in AWS ECR
 
-The `PROFILE` parameter refers to your amp2aws profile (build, dev, sit, onb, etc).
+The `PROFILE` parameter refers to your AWS credential profile.
 
 Lintball Prod images will be registered in the AWS build account.
 
