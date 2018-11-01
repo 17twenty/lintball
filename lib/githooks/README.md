@@ -12,6 +12,10 @@ To enable the pre-commit hook, follow the steps below, which describe how to:
 + symlink your pre-commit script into the .git/hooks/ repo
 + toggle debug logging output on the linting script
 
+## Pre-requisites
+
+See parent [README.md](../README.md)
+
 ## Clone this repo locally
 
 ```bash
