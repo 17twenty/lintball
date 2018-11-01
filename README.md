@@ -13,6 +13,7 @@ Provides `linting` features, in a single execution, for the following file types
 2. [Getting started](#getting-started)
 3. [Operation modes](#operation-modes)
 4. [Contributing](#contributing)
+5. [AWS ECR](#AWS-ECR)
 
 ## Pre-requisites
 
@@ -117,25 +118,7 @@ guide: [Semantic Versioing](https://semver.org/)
 2. All Changes must be PR'd
 3. Only master should be published
 
-#### Publish update to DEV for test
-
-You don't need to declare a `PROFILE` parameter when publishing a test image
-
-```bash
-# Following Command assumes you have valid AWS creds, please use amp2aws to generate valid creds
-make publish
-```
-
-#### Publishing update to PROD
-
-The `PROFILE` parameter refers to your AWS credential profile.
-
-Lintball Prod images will be registered in the AWS build account.
-
-```bash
-# Following Command assumes you have valid AWS creds, please use amp2aws to generate valid creds
-make publish PROFILE=build
-```
+### AWS ECR
 
 ### Creating new Lintball ECR repo
 
@@ -146,8 +129,19 @@ The `PROFILE` parameter refers to your AWS credential profile.
 Lintball Prod images will be registered in the AWS build account.
 
 ```bash
-# Following Command assumes you have valid AWS creds, please use amp2aws to generate valid creds
+# Following Command assumes you have valid AWS creds
 make create-ecr-repo PROFILE=<your-profile>
+```
+
+#### Publishing update to AWS ECR
+
+The `PROFILE` parameter refers to your AWS credential profile.
+
+Lintball Prod images will be registered in the AWS account ECR Repo.
+
+```bash
+# Following Command assumes you have valid AWS creds
+make publish PROFILE=<your-profile>
 ```
 
 ## Option 2

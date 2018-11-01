@@ -13,7 +13,7 @@ export $(shell sed 's/=.*//' $(ENV_FILE))
 
 CWD = $(shell pwd)
 CFN_OUTPUT_DIR = output
-PROFILE ?= dev
+PROFILE ?= default
 REGION ?= ap-southeast-2
 ACCOUNT = $(shell aws sts get-caller-identity --output text --query "Account")
 BUILD_ENV ?= devci
@@ -32,7 +32,7 @@ tests: ## Run lints against all files within test/test_files
 	done
 
 
-test: ## Run Lint against 1 file eg: make test FILE=test.yaml LINTFILE=.lintignore
+test: ## Run Lint against 1 file eg: make test FILE=test.yaml
 	docker run \
 	--rm \
 	-e AWS_ACCESS_KEY_ID=$(shell aws configure --profile ${PROFILE} get aws_access_key_id) \
