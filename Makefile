@@ -31,7 +31,6 @@ tests: ## Run lints against all files within test/test_files
 		$(MAKE) test FILE="$$file"; \
 	done
 
-
 test: ## Run Lint against 1 file eg: make test FILE=test.yaml
 	docker run \
 	--rm \
@@ -55,7 +54,6 @@ lint-git-changes: ## Instead of passing names / shared folder to the container, 
 	-e DEBUG="true" \
 	--rm \
 	$(IMAGE_NAME)
-#	--entrypoint env \
 
 test-cfn: ## Run cfn-lint against cloudformation
 	cfn-lint cloudformation/lintball-ecr.cfn
@@ -67,7 +65,6 @@ local-bash: ## Launch container with entrypoint: bash
 	  -v "$(CWD)/test:/scan" \
 	  -it \
 	  $(IMAGE_NAME)
-
 
 build: clean ## Docker Compose build Lintball
 	docker-compose build
