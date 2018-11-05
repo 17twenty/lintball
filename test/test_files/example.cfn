@@ -25,11 +25,6 @@ Parameters:
     Type: String
     Default: "devci-build-system-iam"
 
-  RejectPendingLambdaStackName:
-    Description: Name of the Reject Pending Lambda stack that this CIP
-      Application Build and Deploy Pipelines stack should be linked to
-    Type: String
-    Default: "devci-reject-pending-lambda"
 
   # Code repo branches
   RepoBranch:
@@ -37,14 +32,6 @@ Parameters:
       repository to be polled for changes to trigger the pipeline
     Type: String
     Default: master
-
-  TargetEnvironment1:
-    Description: The name of the first environment to deploy to
-    Type: String
-
-  TargetEnvironment2:
-    Description: The name of the second environment to deploy to
-    Type: String
 
   CheckTag:
     Description: Check that the commit is tagged at the build stage

@@ -24,10 +24,7 @@ publish: tests ecr-login ## Publish to ecr
 	docker tag $(IMAGE_NAME) $(ECR_REPO) \
 	&& docker push $(ECR_REPO)
 
-tests: ## Run lints against all files within test/test_files
-	$(MAKE) test FILE="$(shell ls test/test_files)"
-
-test: ## Run Lint against 1 file eg: make test FILE=test.yaml
+test: ## Run Lint against all files in test/test_files
 	docker run \
 	--rm \
 	-e AWS_ACCESS_KEY_ID=$(shell aws configure --profile ${PROFILE} get aws_access_key_id) \
@@ -36,7 +33,7 @@ test: ## Run Lint against 1 file eg: make test FILE=test.yaml
 	-e AWS_DEFAULT_REGION=$(REGION) \
 	-e DEBUG="true" \
 	-v "$(CWD)/test/test_files:/scan" \
-	-i "$(IMAGE_NAME)" $(FILE)
+	-i "$(IMAGE_NAME)" $(shell ls test/test_files)
 
 lint-git-changes: ## Instead of passing names / shared folder to the container, pull down the changes from a git repo
 	docker run \

@@ -23,7 +23,7 @@ handle()
     then
       log "Invoking aws cloudformation validate-template on [${FILENAME}]"
 
-      if aws sts get-caller-identity; then
+      if aws sts get-caller-identity > /dev/null 2>&1; then
         echo "TODO aws cloudformation validate-template --template-body file://\"${FILENAME}\""
         RC=${?}
       else
