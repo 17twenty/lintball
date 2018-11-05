@@ -15,7 +15,7 @@ CWD = $(shell pwd)
 CFN_OUTPUT_DIR = output
 PROFILE ?= default
 REGION ?= ap-southeast-2
-ACCOUNT = $(shell aws sts get-caller-identity --output text --query "Account")
+ACCOUNT = $(shell aws sts get-caller-identity --profile $(PROFILE) --output text --query "Account")
 BUILD_ENV ?= devci
 ECR_REPO = "${ACCOUNT}.dkr.ecr.${REGION}.amazonaws.com/$(IMAGE_NAME)"
 
