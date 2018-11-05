@@ -35,10 +35,11 @@ if [ -n "${GIT_URI:-""}" ]; then
   git clone "${GIT_URI}" "${WORKING_DIR}"
 
   # Checkout the branch we are interested in (in a subshell, so as not to affect PWD)
+  #shellcheck disable=SC2091
   $(cd "${WORKING_DIR}" && git checkout "${GIT_COMMIT}" -B "${GIT_BRANCH}")
   #printf  "running: git checkout \"${GIT_COMMIT}\" -B \"${GIT_BRANCH}\"\nOn workdir ${WORKING_DIR}\n"
   FILENAMES=$(cd "${WORKING_DIR}" && git diff --name-only "${GIT_BRANCH}" "$(git merge-base "${GIT_BRANCH}" master)")
-  INPUT_FILES="${FILENAMES}"
+  mapfile -t INPUT_FILES <<< "$FILENAMES"
 fi
 
 
@@ -57,6 +58,7 @@ debug "${WORKING_DIR} files: $(ls -alF ${WORKING_DIR})"
 RC=0
 
 declare PROCESS_FILE_FLAG=""
+
 
 for FILE in "${INPUT_FILES[@]}"
 do
