@@ -49,7 +49,8 @@ determine_git_revision()
     git_against=HEAD
   else
     # Initial commit: diff git_against an empty tree object
-    git_against=4b825dc642cb6eb9a060e54bf8d69288fbee4904
+    # https://stackoverflow.com/q/9765453
+    git_against=$(git hash-object -t tree /dev/null)
   fi
 }
 
@@ -68,12 +69,13 @@ cd "$(git rev-parse --show-toplevel)"
 declare CHANGED_FILES=""
 CHANGED_FILES="$(git diff-index --cached --name-only "$git_against")"
 
-dump_changed_files ${git_against}
+dump_changed_files "${git_against}"
 
 #TODO - @muz - source in the lintball version from an external file (shared with the Makefile, to ensure version is in sync)
 docker run -v "$PWD:/scan" -e DEBUG="true" --rm lintball:1.0.0 "${CHANGED_FILES}"
+RC=$?
 
-echo "RC=${RC}"
+echo "Docker Run RC=${RC}"
 
 if [ "${RC}" -gt 0 ]
 then
