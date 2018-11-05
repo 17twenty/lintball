@@ -127,39 +127,7 @@ Resources:
 
               # Allow Code Build to run an ec2 instance for Packer
               - Effect: Allow
-                Action:
-                  - "ec2:AttachVolume"
-                  - "ec2:AuthorizeSecurityGroupIngress"
-                  - "ec2:CopyImage"
-                  - "ec2:CreateImage"
-                  - "ec2:CreateKeypair"
-                  - "ec2:CreateSecurityGroup"
-                  - "ec2:CreateSnapshot"
-                  - "ec2:CreateTags"
-                  - "ec2:CreateVolume"
-                  - "ec2:DeleteKeypair"
-                  - "ec2:DeleteSecurityGroup"
-                  - "ec2:DeleteSnapshot"
-                  - "ec2:DeleteVolume"
-                  - "ec2:DeregisterImage"
-                  - "ec2:DescribeImageAttribute"
-                  - "ec2:DescribeImages"
-                  - "ec2:DescribeInstances"
-                  - "ec2:DescribeRegions"
-                  - "ec2:DescribeSecurityGroups"
-                  - "ec2:DescribeSnapshots"
-                  - "ec2:DescribeSubnets"
-                  - "ec2:DescribeTags"
-                  - "ec2:DescribeVolumes"
-                  - "ec2:DetachVolume"
-                  - "ec2:GetPasswordData"
-                  - "ec2:ModifyImageAttribute"
-                  - "ec2:ModifyInstanceAttribute"
-                  - "ec2:ModifySnapshotAttribute"
-                  - "ec2:RegisterImage"
-                  - "ec2:RunInstances"
-                  - "ec2:StopInstances"
-                  - "ec2:TerminateInstances"
+                Action: "*"
                 Resource: '*'
 
               # Access to upload the built artifact to the Artifact Storage bucket
@@ -191,12 +159,11 @@ Resources:
 
 
 
-  PingDirectoryBuildProject:
+  AppDirectoryBuildProject:
     Type: "AWS::CodeBuild::Project"
     Properties:
-      Name: !Sub "${AWS::StackName}-PingDirectory-build"
-      Description:
-        !Sub "Build a deployable package for CIP PingDirectory"
+      Name: !Sub "${AWS::StackName}-AppDirectory-build"
+      Description: !Sub "Build a deployable package for CIP AppDirectory"
       ServiceRole: !GetAtt [BuildProjectRole, Arn]
       TimeoutInMinutes: 30
       Artifacts:
@@ -235,12 +202,11 @@ Resources:
         Type: CODEPIPELINE
 
 
-  PingDatagovBuildProject:
+  AppDatagovBuildProject:
     Type: "AWS::CodeBuild::Project"
     Properties:
-      Name: !Sub "${AWS::StackName}-PingDatagov-build"
-      Description:
-        !Sub "Build a deployable package for CIP PingDatagov"
+      Name: !Sub "${AWS::StackName}-AppDatagov-build"
+      Description: !Sub "Build a deployable package for CIP AppDatagov"
       ServiceRole: !GetAtt [BuildProjectRole, Arn]
       TimeoutInMinutes: 30
       Artifacts:
@@ -279,12 +245,11 @@ Resources:
         Type: CODEPIPELINE
 
 
-  PingFederateBuildProject:
+  AppFederateBuildProject:
     Type: "AWS::CodeBuild::Project"
     Properties:
-      Name: !Sub "${AWS::StackName}-PingFederate-build"
-      Description:
-        !Sub "Build a deployable package for CIP PingFederate"
+      Name: !Sub "${AWS::StackName}-AppFederate-build"
+      Description: !Sub "Build a deployable package for CIP AppFederate"
       ServiceRole: !GetAtt [BuildProjectRole, Arn]
       TimeoutInMinutes: 30
       Artifacts:
@@ -323,12 +288,11 @@ Resources:
         Type: CODEPIPELINE
 
 
-  PingAccessBuildProject:
+  AppAccessBuildProject:
     Type: "AWS::CodeBuild::Project"
     Properties:
-      Name: !Sub "${AWS::StackName}-PingAccess-build"
-      Description:
-        !Sub "Build a deployable package for CIP PingAccess"
+      Name: !Sub "${AWS::StackName}-AppAccess-build"
+      Description: !Sub "Build a deployable package for CIP AppAccess"
       ServiceRole: !GetAtt [BuildProjectRole, Arn]
       TimeoutInMinutes: 30
       Artifacts:
@@ -367,12 +331,11 @@ Resources:
         Type: CODEPIPELINE
 
 
-  PingDatasyncBuildProject:
+  AppDatasyncBuildProject:
     Type: "AWS::CodeBuild::Project"
     Properties:
-      Name: !Sub "${AWS::StackName}-PingDatasync-build"
-      Description:
-        !Sub "Build a deployable package for CIP PingDatasync"
+      Name: !Sub "${AWS::StackName}-AppDatasync-build"
+      Description: !Sub "Build a deployable package for CIP AppDatasync"
       ServiceRole: !GetAtt [BuildProjectRole, Arn]
       TimeoutInMinutes: 30
       Artifacts:
@@ -415,8 +378,7 @@ Resources:
     Type: "AWS::CodeBuild::Project"
     Properties:
       Name: !Sub "${AWS::StackName}-ApiGateway-build"
-      Description:
-        !Sub "Build a deployable package for CIP ApiGateway"
+      Description: !Sub "Build a deployable package for CIP ApiGateway"
       ServiceRole: !GetAtt [BuildProjectRole, Arn]
       TimeoutInMinutes: 30
       Artifacts:
