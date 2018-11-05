@@ -1,27 +1,23 @@
 ---
 AWSTemplateFormatVersion: "2010-09-09"
 Description:
-  CodePipeline and CodeBuild projects to deploy CIP applications
+  CodePipeline and CodeBuild projects to deploy  applications
 
 Parameters:
   # General settings
   BuildEnvironment:
     Description: The (logical) name of this environment.
-      Build System Data stack. Determines which build settings file from
-      the Configurations repo will be passed to the AMI/Packer build job
     Type: String
     Default: devci
 
   # Stack dependencies
   BuildSystemDataStackName:
-    Description: Name of the Build System Data stack that this CIP Application
-      Deploy Pipelines stack should be linked to
+    Description: Name of the Build System Data stack that this  Application
     Type: String
     Default: "devci-build-system-data"
 
   BuildSystemIAMStackName:
-    Description: Name of the Build System IAM stack that this CIP Application
-      Build and Deploy Pipelines stack should be linked to
+    Description: Name of the Build System IAM stack that this  Application
     Type: String
     Default: "devci-build-system-iam"
 
@@ -29,7 +25,6 @@ Parameters:
   # Code repo branches
   RepoBranch:
     Description: The name of the branch in the application GitHub
-      repository to be polled for changes to trigger the pipeline
     Type: String
     Default: master
 
@@ -163,7 +158,7 @@ Resources:
     Type: "AWS::CodeBuild::Project"
     Properties:
       Name: !Sub "${AWS::StackName}-AppDirectory-build"
-      Description: !Sub "Build a deployable package for CIP AppDirectory"
+      Description: !Sub "Build a deployable package for  AppDirectory"
       ServiceRole: !GetAtt [BuildProjectRole, Arn]
       TimeoutInMinutes: 30
       Artifacts:
@@ -206,7 +201,7 @@ Resources:
     Type: "AWS::CodeBuild::Project"
     Properties:
       Name: !Sub "${AWS::StackName}-AppDatagov-build"
-      Description: !Sub "Build a deployable package for CIP AppDatagov"
+      Description: !Sub "Build a deployable package"
       ServiceRole: !GetAtt [BuildProjectRole, Arn]
       TimeoutInMinutes: 30
       Artifacts:
@@ -249,7 +244,7 @@ Resources:
     Type: "AWS::CodeBuild::Project"
     Properties:
       Name: !Sub "${AWS::StackName}-AppFederate-build"
-      Description: !Sub "Build a deployable package for CIP AppFederate"
+      Description: !Sub "Build a deployable package"
       ServiceRole: !GetAtt [BuildProjectRole, Arn]
       TimeoutInMinutes: 30
       Artifacts:
@@ -292,7 +287,7 @@ Resources:
     Type: "AWS::CodeBuild::Project"
     Properties:
       Name: !Sub "${AWS::StackName}-AppAccess-build"
-      Description: !Sub "Build a deployable package for CIP AppAccess"
+      Description: !Sub "Build a deployable package"
       ServiceRole: !GetAtt [BuildProjectRole, Arn]
       TimeoutInMinutes: 30
       Artifacts:
@@ -335,7 +330,7 @@ Resources:
     Type: "AWS::CodeBuild::Project"
     Properties:
       Name: !Sub "${AWS::StackName}-AppDatasync-build"
-      Description: !Sub "Build a deployable package for CIP AppDatasync"
+      Description: !Sub "Build a deployable package"
       ServiceRole: !GetAtt [BuildProjectRole, Arn]
       TimeoutInMinutes: 30
       Artifacts:
@@ -378,7 +373,7 @@ Resources:
     Type: "AWS::CodeBuild::Project"
     Properties:
       Name: !Sub "${AWS::StackName}-ApiGateway-build"
-      Description: !Sub "Build a deployable package for CIP ApiGateway"
+      Description: !Sub "Build a deployable package"
       ServiceRole: !GetAtt [BuildProjectRole, Arn]
       TimeoutInMinutes: 30
       Artifacts:
