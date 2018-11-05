@@ -25,7 +25,7 @@ ensure_dependencies_are_installed
 
 declare FILENAMES="${1:-}"
 declare WORKING_DIR="/scan"
-declare INPUT_FILES=("${@}")
+declare INPUT_FILES=("$@")
 
 # If the user passes in a git address, clone the repo and lint the changed files
 # (else, the filenames are expected as args)
@@ -58,7 +58,7 @@ RC=0
 
 declare PROCESS_FILE_FLAG=""
 
-while read -r FILE
+for FILE in "${INPUT_FILES[@]}"
 do
   PROCESS_FILE_FLAG="false"
   FILENAME="${WORKING_DIR}/${FILE}"
@@ -110,8 +110,7 @@ do
   else
     log "Not linting file ${FILENAME}"
   fi
-
-done <<< "${INPUT_FILES}"
+done
 
 
 # Display output for capture on the terminal

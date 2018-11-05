@@ -24,12 +24,8 @@ publish: tests ecr-login ## Publish to ecr
 	docker tag $(IMAGE_NAME) $(ECR_REPO) \
 	&& docker push $(ECR_REPO)
 
-
 tests: ## Run lints against all files within test/test_files
-	@echo $(VERSION)
-	@for file in `ls test/test_files`; do \
-		$(MAKE) test FILE="$$file"; \
-	done
+	$(MAKE) test FILE="$(shell ls test/test_files)"
 
 test: ## Run Lint against 1 file eg: make test FILE=test.yaml
 	docker run \
