@@ -1,5 +1,11 @@
 #!/bin/bash
 # shellcheck disable=SC2039
+usage()
+{
+  echo "Usage : $0 <files>"
+  echo "${2}" # The error message
+  exit "${1:-0}"
+}
 
 set -uo pipefail
 
