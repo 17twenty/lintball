@@ -1,0 +1,473 @@
+---
+AWSTemplateFormatVersion: "2010-09-09"
+Description:
+  CodePipeline and CodeBuild projects to deploy  applications
+
+Parameters:
+  # General settings
+  BuildEnvironment:
+    Description: The (logical) name of this environment.
+    Type: String
+    Default: devci
+
+  # Stack dependencies
+  BuildSystemDataStackName:
+    Description: Name of the Build System Data stack that this  Application
+    Type: String
+    Default: "devci-build-system-data"
+
+  BuildSystemIAMStackName:
+    Description: Name of the Build System IAM stack that this  Application
+    Type: String
+    Default: "devci-build-system-iam"
+
+
+  # Code repo branches
+  RepoBranch:
+    Description: The name of the branch in the application GitHub
+    Type: String
+    Default: master
+
+  CheckTag:
+    Description: Check that the commit is tagged at the build stage
+    Type: String
+    AllowedValues: ['true', 'false']
+    Default: 'true'
+
+Resources:
+  # Build resources
+  BuildProjectRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - codebuild.amazonaws.com
+            Action:
+              - "sts:AssumeRole"
+      Policies:
+        - PolicyName: BuildProjectPolicy
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              # Access to assume the deployment role in the target account
+              - Effect: Allow
+                Action:
+                  - "sts:AssumeRole"
+                Resource:
+                  - "*"
+              # Get SSM params
+              - Effect: Allow
+                Action:
+                  - "ssm:GetParameters"
+                Resource:
+                  - "*"
+              # Log access
+              - Effect: Allow
+                Action:
+                  - "logs:CreateLogGroup"
+                  - "logs:CreateLogStream"
+                  - "logs:PutLogEvents"
+                Resource:
+                  - !Sub "arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:\
+                          /aws/codebuild/\
+                          ${AWS::StackName}-*-build"
+                  - !Sub "arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:\
+                          /aws/codebuild/\
+                          ${AWS::StackName}-*-build:*"
+
+              # Access to S3 bucket to retrieve pipeline source artifacts
+              # Ability to write for cache
+              - Effect: Allow
+                Action:
+                  - "s3:Get*"
+                  - "s3:Put*"
+                  - "s3:List*"
+                Resource:
+                  - !Join
+                    - ""
+                    - - Fn::ImportValue:
+                          !Sub "${BuildSystemDataStackName}-CodePipelineBucketArn"
+                      - "*"
+              # Access to S3 bucket to retrieve build dependencies in the resources bucket
+              - Effect: Allow
+                Action:
+                  - "s3:Get*"
+                  - "s3:List*"
+                Resource:
+                  - !Join
+                    - ""
+                    - - Fn::ImportValue:
+                          !Sub "${BuildSystemDataStackName}-BuildResourcesBucketArn"
+                      - "*"
+              # Allow CodeBuild (on behalf of Packer) to only associate the
+              # Packer Role/Instance Profile to EC2's
+              - Effect: Allow
+                Action:
+                  - "iam:PassRole"
+                Resource:
+                  - Fn::ImportValue:
+                      !Sub "${BuildSystemIAMStackName}-PackerRoleArn"
+
+              # Access to query the CodePipeline state
+              - Effect: Allow
+                Action:
+                  - "codepipeline:GetPipelineState"
+                Resource:
+                  - !Sub "arn:aws:codepipeline:${AWS::Region}:${AWS::AccountId}:\
+                          ${AWS::StackName}"
+
+              # Allow Code Build to run an ec2 instance for Packer
+              - Effect: Allow
+                Action: "*"
+                Resource: '*'
+
+              # Access to upload the built artifact to the Artifact Storage bucket
+              - Effect: Allow
+                Action:
+                  - "s3:Put*"
+                  - "s3:List*" # Avoid permission denied on first put
+                Resource:
+                  - !Join
+                      - ""
+                      - - Fn::ImportValue:
+                            !Sub "${BuildSystemDataStackName}-ArtifactsBucketArn"
+                        - "/"
+                        - "*"
+
+                # Allow actions with ECR
+              - Effect: Allow
+                Action:
+                    - "ecr:GetAuthorizationToken"
+                    - "ecr:GetDownloadUrlForLayer"
+                    - "ecr:BatchGetImage"
+                    - "ecr:BatchCheckLayerAvailability"
+                    - "ecr:PutImage"
+                    - "ecr:DescribeImages"
+                    - "ecr:UploadLayerPart"
+                    - "ecr:InitiateLayerUpload"
+                    - "ecr:CompleteLayerUpload"
+                Resource: '*'
+
+
+
+  AppDirectoryBuildProject:
+    Type: "AWS::CodeBuild::Project"
+    Properties:
+      Name: !Sub "${AWS::StackName}-AppDirectory-build"
+      Description: !Sub "Build a deployable package for  AppDirectory"
+      ServiceRole: !GetAtt [BuildProjectRole, Arn]
+      TimeoutInMinutes: 30
+      Artifacts:
+        Type: CODEPIPELINE
+      Environment:
+        ComputeType: BUILD_GENERAL1_SMALL
+        Type: LINUX_CONTAINER
+        Image:
+          aws/codebuild/docker:17.09.0
+        EnvironmentVariables:
+
+          - Name: BUILD_ENVIRONMENT
+            Value: !Ref BuildEnvironment
+
+          - Name: ARTIFACT_BUCKET_NAME
+            Value:
+              Fn::ImportValue:
+                !Sub "${BuildSystemDataStackName}-ArtifactsBucketName"
+
+          - Name: STACKNAME
+            Value: !Sub "${AWS::StackName}"
+
+          - Name: GIT_BRANCH
+            Value: !Ref RepoBranch
+
+          # Used by docker-wrap.sh
+          - Name: HOME
+            Value: "/root"
+          - Name: USER
+            Value: "root"
+
+          - Name: CHECK_TAG
+            Value: !Ref CheckTag
+
+      Source:
+        Type: CODEPIPELINE
+
+
+  AppDatagovBuildProject:
+    Type: "AWS::CodeBuild::Project"
+    Properties:
+      Name: !Sub "${AWS::StackName}-AppDatagov-build"
+      Description: !Sub "Build a deployable package"
+      ServiceRole: !GetAtt [BuildProjectRole, Arn]
+      TimeoutInMinutes: 30
+      Artifacts:
+        Type: CODEPIPELINE
+      Environment:
+        ComputeType: BUILD_GENERAL1_SMALL
+        Type: LINUX_CONTAINER
+        Image:
+          aws/codebuild/docker:17.09.0
+        EnvironmentVariables:
+
+          - Name: BUILD_ENVIRONMENT
+            Value: !Ref BuildEnvironment
+
+          - Name: ARTIFACT_BUCKET_NAME
+            Value:
+              Fn::ImportValue:
+                !Sub "${BuildSystemDataStackName}-ArtifactsBucketName"
+
+          - Name: STACKNAME
+            Value: !Sub "${AWS::StackName}"
+
+          - Name: GIT_BRANCH
+            Value: !Ref RepoBranch
+
+          # Used by docker-wrap.sh
+          - Name: HOME
+            Value: "/root"
+          - Name: USER
+            Value: "root"
+
+          - Name: CHECK_TAG
+            Value: !Ref CheckTag
+
+      Source:
+        Type: CODEPIPELINE
+
+
+  AppFederateBuildProject:
+    Type: "AWS::CodeBuild::Project"
+    Properties:
+      Name: !Sub "${AWS::StackName}-AppFederate-build"
+      Description: !Sub "Build a deployable package"
+      ServiceRole: !GetAtt [BuildProjectRole, Arn]
+      TimeoutInMinutes: 30
+      Artifacts:
+        Type: CODEPIPELINE
+      Environment:
+        ComputeType: BUILD_GENERAL1_SMALL
+        Type: LINUX_CONTAINER
+        Image:
+          aws/codebuild/docker:17.09.0
+        EnvironmentVariables:
+
+          - Name: BUILD_ENVIRONMENT
+            Value: !Ref BuildEnvironment
+
+          - Name: ARTIFACT_BUCKET_NAME
+            Value:
+              Fn::ImportValue:
+                !Sub "${BuildSystemDataStackName}-ArtifactsBucketName"
+
+          - Name: STACKNAME
+            Value: !Sub "${AWS::StackName}"
+
+          - Name: GIT_BRANCH
+            Value: !Ref RepoBranch
+
+          # Used by docker-wrap.sh
+          - Name: HOME
+            Value: "/root"
+          - Name: USER
+            Value: "root"
+
+          - Name: CHECK_TAG
+            Value: !Ref CheckTag
+
+      Source:
+        Type: CODEPIPELINE
+
+
+  AppAccessBuildProject:
+    Type: "AWS::CodeBuild::Project"
+    Properties:
+      Name: !Sub "${AWS::StackName}-AppAccess-build"
+      Description: !Sub "Build a deployable package"
+      ServiceRole: !GetAtt [BuildProjectRole, Arn]
+      TimeoutInMinutes: 30
+      Artifacts:
+        Type: CODEPIPELINE
+      Environment:
+        ComputeType: BUILD_GENERAL1_SMALL
+        Type: LINUX_CONTAINER
+        Image:
+          aws/codebuild/docker:17.09.0
+        EnvironmentVariables:
+
+          - Name: BUILD_ENVIRONMENT
+            Value: !Ref BuildEnvironment
+
+          - Name: ARTIFACT_BUCKET_NAME
+            Value:
+              Fn::ImportValue:
+                !Sub "${BuildSystemDataStackName}-ArtifactsBucketName"
+
+          - Name: STACKNAME
+            Value: !Sub "${AWS::StackName}"
+
+          - Name: GIT_BRANCH
+            Value: !Ref RepoBranch
+
+          # Used by docker-wrap.sh
+          - Name: HOME
+            Value: "/root"
+          - Name: USER
+            Value: "root"
+
+          - Name: CHECK_TAG
+            Value: !Ref CheckTag
+
+      Source:
+        Type: CODEPIPELINE
+
+
+  AppDatasyncBuildProject:
+    Type: "AWS::CodeBuild::Project"
+    Properties:
+      Name: !Sub "${AWS::StackName}-AppDatasync-build"
+      Description: !Sub "Build a deployable package"
+      ServiceRole: !GetAtt [BuildProjectRole, Arn]
+      TimeoutInMinutes: 30
+      Artifacts:
+        Type: CODEPIPELINE
+      Environment:
+        ComputeType: BUILD_GENERAL1_SMALL
+        Type: LINUX_CONTAINER
+        Image:
+          aws/codebuild/docker:17.09.0
+        EnvironmentVariables:
+
+          - Name: BUILD_ENVIRONMENT
+            Value: !Ref BuildEnvironment
+
+          - Name: ARTIFACT_BUCKET_NAME
+            Value:
+              Fn::ImportValue:
+                !Sub "${BuildSystemDataStackName}-ArtifactsBucketName"
+
+          - Name: STACKNAME
+            Value: !Sub "${AWS::StackName}"
+
+          - Name: GIT_BRANCH
+            Value: !Ref RepoBranch
+
+          # Used by docker-wrap.sh
+          - Name: HOME
+            Value: "/root"
+          - Name: USER
+            Value: "root"
+
+          - Name: CHECK_TAG
+            Value: !Ref CheckTag
+
+      Source:
+        Type: CODEPIPELINE
+
+
+  ApiGatewayBuildProject:
+    Type: "AWS::CodeBuild::Project"
+    Properties:
+      Name: !Sub "${AWS::StackName}-ApiGateway-build"
+      Description: !Sub "Build a deployable package"
+      ServiceRole: !GetAtt [BuildProjectRole, Arn]
+      TimeoutInMinutes: 30
+      Artifacts:
+        Type: CODEPIPELINE
+      Environment:
+        ComputeType: BUILD_GENERAL1_SMALL
+        Type: LINUX_CONTAINER
+        Image:
+          aws/codebuild/docker:17.09.0
+        EnvironmentVariables:
+
+          - Name: BUILD_ENVIRONMENT
+            Value: !Ref BuildEnvironment
+
+          - Name: ARTIFACT_BUCKET_NAME
+            Value:
+              Fn::ImportValue:
+                !Sub "${BuildSystemDataStackName}-ArtifactsBucketName"
+
+          - Name: STACKNAME
+            Value: !Sub "${AWS::StackName}"
+
+          - Name: GIT_BRANCH
+            Value: !Ref RepoBranch
+
+          # Used by docker-wrap.sh
+          - Name: HOME
+            Value: "/root"
+          - Name: USER
+            Value: "root"
+
+          - Name: CHECK_TAG
+            Value: !Ref CheckTag
+
+          - Name: AWS_DEFAULT_REGION
+            Value: !Ref "AWS::Region"
+
+      Source:
+        Type: CODEPIPELINE
+
+
+  # Pipeline resources
+  PipelineRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - codepipeline.amazonaws.com
+            Action:
+              - "sts:AssumeRole"
+      Policies:
+        - PolicyName: PipelinePolicy
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              # Access to S3 bucket for pipeline artifact storage
+              - Effect: Allow
+                Action:
+                  - "s3:Get*"
+                  - "s3:Put*"
+                  - "s3:List*"
+                Resource:
+                  - !Join
+                    - ""
+                    - - Fn::ImportValue:
+                          !Sub "${BuildSystemDataStackName}-CodePipelineBucketArn"
+                      - "*"
+
+              # Access to publish SNS notifications for manual approval stages
+              - Effect: Allow
+                Action:
+                  - "sns:Publish"
+                Resource:
+                  - Fn::ImportValue:
+                      !Sub "${BuildSystemDataStackName}-DevOpsNotifications"
+
+              # CodeBuild permissions
+              - Effect: Allow
+                Action:
+                  - "codebuild:BatchGetBuilds"
+                  - "codebuild:StartBuild"
+                Resource:
+                  - Fn::Sub: arn:aws:codebuild:${AWS::Region}:${AWS::AccountId}:project/${AWS::StackName}*
+                  - Fn::Sub: arn:aws:codebuild:${AWS::Region}:${AWS::AccountId}:build/${AWS::StackName}*
+
+
+              # Allow invoke of rejection lambda
+              - Effect: Allow
+                Action:
+                  - "lambda:ListFunctions"
+                  - "lambda:InvokeFunction"
+                Resource: "*"
+

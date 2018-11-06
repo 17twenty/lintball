@@ -1,0 +1,88 @@
+#!/bin/bash -e
+# shellcheck disable=SC2039
+
+set -uo pipefail
+
+#
+# git pre-commit linter code
+#
+# Requires :
+#   the lintball:1.0.0 docker container,
+###############################################################################
+RC=0
+
+
+
+dump_changed_files()
+{
+  printf "===================  CHANGED FILES  ==============================\n"
+  git diff-index --cached --name-status "${1}"
+  printf "==================================================================\n"
+}
+
+check_prerequisites()
+{
+  #e.g. lintball:1.0.0
+  local IMAGE_NAME="lintball"
+
+  # This version value will be updated dynamically in the created pre-commit hook
+  local IMAGE_TAG="<[[ LINTBALL_VERSION ]]>"
+
+  echo "Checking local docker env for image - ${IMAGE_NAME}:${IMAGE_TAG}"
+
+  # TODO Get ImageName/Version from shared file?
+  if ! docker images --filter=reference="${IMAGE_NAME}:${IMAGE_TAG}"
+  then
+    echo "Image ${IMAGE_NAME}:${IMAGE_TAG} not found, have you installed from https://github.com/Versent/lintball ?"
+    exit 1
+  fi
+}
+
+
+###############################################################################
+
+determine_git_revision()
+{
+  # Work out what to diff git_against, really HEAD will work for any established repository.
+  if git rev-parse --verify HEAD >/dev/null 2>&1
+  then
+    git_against=HEAD
+  else
+    # Initial commit: diff git_against an empty tree object
+    # https://stackoverflow.com/q/9765453
+    git_against=$(git hash-object -t tree /dev/null)
+  fi
+}
+
+
+########
+# MAIN #
+###############################################################################
+check_prerequisites
+determine_git_revision
+
+RC=0
+
+# Ensure we are in the top level of the git repo
+cd "$(git rev-parse --show-toplevel)"
+
+declare CHANGED_FILES=""
+CHANGED_FILES="$(git diff-index --cached --name-only "$git_against")"
+
+dump_changed_files "${git_against}"
+
+# Lintball needs a list of files to be passed, removing the need to put double quotes
+#shellcheck disable=SC2086
+docker run -v "$PWD:/scan" -e DEBUG="true" --rm lintball:1.0.0 "${CHANGED_FILES}"
+RC=$?
+
+echo "Docker Run RC=${RC}"
+
+if [ "${RC}" -gt 0 ]
+then
+  echo Commit failed due to linting errors
+  exit 1
+fi
+exit 0
+
+#   Using docker image lintball-<[[ LINTBALL_VERSION ]]>
