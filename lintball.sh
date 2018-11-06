@@ -102,14 +102,14 @@ do
       do
         debug "Testing [\"${FILENAME}\"] against Linter [$(basename "${linter}")]"
         set +e
-        ${linter} "${FILENAME}" || RC=$?
+        ${linter} "${FILENAME}" "${WORKING_DIR}" || RC=$?
         set -e
       done
     else
       log "DELETED FILE ${FILENAME} - IGNORING"
     fi
 
-  else
+  elsenice
     log "Not linting file ${FILENAME}"
   fi
 done
