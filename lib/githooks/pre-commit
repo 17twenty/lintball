@@ -70,7 +70,7 @@ determine_git_revision
 RC=0
 
 # Ensure we are in the top level of the git repo
-cd "$(git rev-parse --show-toplevel)" || exit 1
+cd "$(git rev-parse --show-toplevel)" || usage "You must run in a .git enabled folder" 1
 
 declare CHANGED_FILES=""
 CHANGED_FILES=$(git diff-index --cached --name-only "$git_against")
