@@ -16,8 +16,8 @@ handle()
 {
   local RC=0
   local FILENAME="${1}"
-  local USERS_YAML_CONFIG_PATH="${WORKING_DIR}/.yamllintrc"
-  local DEFAULT_YAML_CONFIG_PATH="./lintball-yamllintrc"
+  local USERS_YAML_CONFIG_PATH="${WORKING_DIR}/.yamllint"
+  local DEFAULT_YAML_CONFIG_PATH="./lintball-yamllint"
   local YAML_CONFIG=""
 
   if echo "${FILENAME}" | grep -e \.yml$ -e \.yaml$ -e \.template$ > /dev/null
@@ -34,7 +34,7 @@ handle()
 
     log "Using YAML_CONFIG - [${YAML_CONFIG}]"
 
-    #TODO - test for existence of .lintball-yamllintrc
+    #TODO - test for existence of .lintball-yamllint
     yamllint -c "${YAML_CONFIG}" "${FILENAME}" 2>&1
     RC=${?}
   fi
