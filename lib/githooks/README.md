@@ -65,7 +65,3 @@ ls -alF /my/project/to/be/linted/.git/hooks/pre-commit
 ## Debug output toggle
 
 To enable debug logging, change the docker environment variable, in the [pre-commit](./pre-commit) script to "true".
-
-### Versent internal link
-
-See https://versent.atlassian.net/wiki/spaces/TCIP/pages/585203752/Linting

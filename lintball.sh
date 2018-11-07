@@ -16,10 +16,14 @@ declare LINTIGNORE_FILENAME=".lintignore"
 cwd=$(dirname "${0}")
 cd "${cwd}"
 
-#shellcheck disable=SC1091
+# Disable rule: Not following: (error message here)
+# we are not using shellcheck -x
+# shellcheck disable=SC1091
 source lib/common.sh
 
-#shellcheck disable=SC1091
+# Disable rule: Not following: (error message here)
+# we are not using shellcheck -x
+# shellcheck disable=SC1091
 source lib/dependencies.sh
 ensure_dependencies_are_installed
 

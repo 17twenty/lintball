@@ -5,7 +5,9 @@ set -ou pipefail
 declare COMMON_LIB_PATH=""
 COMMON_LIB_PATH="$(dirname "$(dirname "${BASH_SOURCE[0]}")")/common.sh"
 
-#shellcheck disable=SC1090
+# Disable rule: Can't follow non-constant source. Use a directive to specify location.
+# dynamically generating lib path
+# shellcheck disable=SC1090
 source "${COMMON_LIB_PATH}"
 
 debug "context = $(dirname $(dirname ${BASH_SOURCE[0]}))"
