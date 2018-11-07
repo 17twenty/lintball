@@ -8,13 +8,15 @@ COMMON_LIB_PATH="$(dirname "$(dirname "${BASH_SOURCE[0]}")")/common.sh"
 #shellcheck disable=SC1090
 source "${COMMON_LIB_PATH}"
 
+WORKING_DIR="${2}"
+
 # TODO - https://yamllint.readthedocs.io/en/stable/configuration.html
 
 handle()
 {
   local RC=0
   local FILENAME="${1}"
-  local USERS_YAML_CONFIG_PATH="./yamllintrc"
+  local USERS_YAML_CONFIG_PATH="${WORKING_DIR}/.yamllintrc"
   local DEFAULT_YAML_CONFIG_PATH="./lintball-yamllintrc"
   local YAML_CONFIG=""
 

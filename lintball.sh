@@ -101,7 +101,7 @@ do
       do
         debug "Testing [\"${FILENAME}\"] against Linter [$(basename "${linter}")]"
         set +e
-        ${linter} "${FILENAME}" || RC=$?
+        ${linter} "${FILENAME}" "${WORKING_DIR}" || RC=$?
         set -e
       done
     else
