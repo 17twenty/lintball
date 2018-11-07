@@ -53,7 +53,6 @@ echo "DEBUG = ${DEBUG}"
 #export DEBUG="false"
 debug "WORKING_DIR=${WORKING_DIR}"
 debug "LINTIGNORE_PATH=${LINTIGNORE_PATH}"
-debug "${WORKING_DIR} files: $(ls -alF ${WORKING_DIR})"
 
 RC=0
 
