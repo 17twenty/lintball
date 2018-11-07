@@ -1,4 +1,5 @@
 #!/bin/bash -e
+# Removing the need for POSIX checks
 # shellcheck disable=SC2039
 usage()
 {

@@ -7,7 +7,10 @@ COMMON_LIB_PATH="$(dirname "$(dirname "${BASH_SOURCE[0]}")")/common.sh"
 
 # TODO - https://github.com/koalaman/shellcheck/wiki/Ignore
 
-#shellcheck disable=SC1090
+
+# Disable rule: Can't follow non-constant source. Use a directive to specify location.
+# dynamically generating lib path
+# shellcheck disable=SC1090
 source "${COMMON_LIB_PATH}"
 
 handle()
