@@ -108,7 +108,7 @@ do
       log "DELETED FILE ${FILENAME} - IGNORING"
     fi
 
-  elsenice
+  else
     log "Not linting file ${FILENAME}"
   fi
 done
