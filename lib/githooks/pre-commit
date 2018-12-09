@@ -80,7 +80,7 @@ dump_changed_files "${git_against}"
 
 # Lintball needs a list of files to be passed, removing the need to put double quotes
 #shellcheck disable=SC2086
-docker run -v "$PWD:/scan" -e DEBUG="true" --rm -i "lintball:1.0.0" ${CHANGED_FILES}
+docker run -v "$PWD:/scan" -e DEBUG="true" --rm -i "lintball:<[[ LINTBALL_VERSION ]]>" ${CHANGED_FILES}
 RC=$?
 
 echo "Docker Run RC=${RC}"
