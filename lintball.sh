@@ -123,10 +123,10 @@ printf "\\n%s\\n" "${SEP}"
 if [ "$RC" -eq 1 ]
 then
     # Echo to stderr (in subshell, to prevent issues with current shell)
-    (>&2 log "${RESULT_PREFIX} FAIL")
+    (>&2 log "${RESULT_PREFIX} FAIL RC=[${RC}]")
 else
     echo ""
-    log "${RESULT_PREFIX} PASS"
+    log "${RESULT_PREFIX} PASS RC=[${RC}]"
 fi
 printf "%s\\n\\n" "${SEP}"
 
