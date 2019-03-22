@@ -1,0 +1,14 @@
+---
+
+version: '3.3'
+services:
+  lintball:
+    build: .
+    environment:
+      - IMAGE_NAME
+      - BUILD_DATE
+      - LINTBALL_COMMIT_ID
+    image: "${IMAGE_NAME}"
+    labels:
+      org.label-schema.build-date: "${BUILD_DATE}"
+      org.label-schema.commit: "${LINTBALL_COMMIT_ID}"

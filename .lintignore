@@ -1,0 +1,3 @@
+./lib/githooks/pre-commit
+./lib/githooks/create-local-pre-commit-hook.sh
+./lib/githooks/README.md

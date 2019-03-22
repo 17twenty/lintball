@@ -1,114 +1,133 @@
 #!/usr/bin/env bash
 # shellcheck disable=SC2039
 # Ignore posix non-compliance due to required use of here document
-set -e
-
-# Work out if it's CFN or YAML
-do_yaml_lint()
-{
-  yamlfile=$1
-  if ! head "${yamlfile}" | grep "AWSTemplateFormatVersion" > /dev/null
-  then
-    # yaml code is not cloudformation
-    echo "========="
-    echo "yamllint running on ${yamlfile}"
-    yamllint -c /yamllintrc "${yamlfile}"
-  else
-    # yaml code is cloudformation
-    echo "========="
-    echo "cfn-lint running on ${yamlfile}"
-
-
-    # Adding Ignore for the following conditions:
-    # - E2540: Pipeline stage name check
-    # - E2541: pipeline stage action name check
-    # - E3002: Making sure that resources properties are properly configured
-    # - W1020: Warning on Sub function, we use the pattern: Fn::Sub "${AWS::StackName}-<some var>" everywhere
-    # - W3002: Warning: This code may only work with `package` cli command. Team is well aware of this limitation
-    #
-    # Reference of cfn-lint Rules: https://github.com/awslabs/cfn-python-lint/blob/master/docs/rules.md
-    cfn-lint "${yamlfile}" -i E2541 E2540 W1020 W3002
-  fi
-}
+set -euo pipefail
 
 usage()
 {
-  echo "Usage : $0 <file>"
-  exit 1
+  echo "Usage : $0 <file(s)> "
+  exit "${1:-0}"
 }
 
-if [ -z ${1+x} ]; then
-  echo "Error - filename not passed to the script"
-  usage
+declare RESULT_PREFIX="Lintball result :"
+declare LINTIGNORE_FILENAME=".lintignore"
+
+# Ensure we run the script from the app directory, not the mounted directory
+cwd=$(dirname "${0}")
+cd "${cwd}"
+
+# Disable rule: Not following: (error message here)
+# we are not using shellcheck -x
+# shellcheck disable=SC1091
+source lib/common.sh
+
+# Disable rule: Not following: (error message here)
+# we are not using shellcheck -x
+# shellcheck disable=SC1091
+source lib/dependencies.sh
+ensure_dependencies_are_installed
+
+declare FILENAMES="${1:-}"
+declare WORKING_DIR="/scan"
+declare INPUT_FILES=("$@")
+
+# If the user passes in a git address, clone the repo and lint the changed files
+# (else, the filenames are expected as args)
+if [ -n "${GIT_URI:-""}" ]; then
+  WORKING_DIR="${WORKING_DIR}/git"
+  FILENAMES="TODO"
+  git clone "${GIT_URI}" "${WORKING_DIR}"
+
+  # Checkout the branch we are interested in (in a subshell, so as not to affect PWD)
+  #shellcheck disable=SC2091
+  $(cd "${WORKING_DIR}" && git checkout "${GIT_COMMIT}" -B "${GIT_BRANCH}")
+  #printf  "running: git checkout \"${GIT_COMMIT}\" -B \"${GIT_BRANCH}\"\nOn workdir ${WORKING_DIR}\n"
+  FILENAMES=$(cd "${WORKING_DIR}" && git diff --name-only "${GIT_BRANCH}" "$(git merge-base "${GIT_BRANCH}" master)")
+  mapfile -t INPUT_FILES <<< "$FILENAMES"
 fi
 
-if ! [ -x "$(command -v shellcheck)" ]; then
-  echo 'Error: shellcheck not found' >&2
-  exit 1
+
+if [ -z ${FILENAMES+x} ]; then
+  echo "Error - filename(s) not passed to the script"
+  usage 1
 fi
 
-if ! [ -x "$(command -v pylint)" ]; then
-  echo 'Error: pylint not found' >&2
-  exit 1
-fi
+declare LINTIGNORE_PATH="${WORKING_DIR}/${LINTIGNORE_FILENAME}"
+echo "DEBUG = ${DEBUG}"
+#export DEBUG="false"
+debug "WORKING_DIR=${WORKING_DIR}"
+debug "LINTIGNORE_PATH=${LINTIGNORE_PATH}"
 
-if ! [ -x "$(command -v cfn-lint)" ]; then
-  echo 'Error: cfn-lint not found' >&2
-  exit 1
-fi
-
-if ! [ -x "$(command -v yamllint)" ]; then
-  echo 'Error: yamllint not found' >&2
-  exit 1
-fi
-
-
-# Assign "unique" filename to the results using timestamp
-OUTFILE="/scan/lintresults.$(date +%s%N)"
-# Ensure outfile is empty just in case it pre-exists
-true > "${OUTFILE}"
-
-FILENAME=/scan/$1
-
-# Set an exit code
 RC=0
-# Confirm file exists
-if [ -f "${FILENAME}" ]
-then
-    if echo "${FILENAME}" | grep \.sh$  > /dev/null
+
+declare PROCESS_FILE_FLAG=""
+
+
+for FILE in "${INPUT_FILES[@]}"
+do
+  PROCESS_FILE_FLAG="false"
+  FILENAME="${WORKING_DIR}/${FILE}"
+
+
+  if [ -f "${FILENAME}" ]
+  then
+    debug "$(ls -alF "${FILENAME}")"
+  fi
+
+  # Does the given .lintignore file exist
+  if [ -f "${LINTIGNORE_PATH}" ] ; then
+
+    debug "Found ${LINTIGNORE_FILENAME} file"
+    # Ignore if file is in lintignore
+    if grep -q "${FILE}" "${LINTIGNORE_PATH}"; then
+      log "${SEP}"
+      log "Found match for ${FILENAME} in: ${LINTIGNORE_PATH}"
+      log "${RESULT_PREFIX} IGNORE"
+      log "${SEP}"
+    else
+      PROCESS_FILE_FLAG="true"
+    fi
+  else
+    log "No ${LINTIGNORE_PATH} file found, ${FILENAME} WILL be linted..."
+    PROCESS_FILE_FLAG="true"
+  fi
+
+  if [[ "${PROCESS_FILE_FLAG}" == "true" ]]; then
+
+    echo ""
+    log "======= LINTBALL ${FILE} ==========="
+    debug "TESTING ARG FILE   =${FILE}"
+    debug "CONTAINER FILENAME =${FILENAME}"
+
+    if [ -f "${FILENAME}" ]
     then
-        #LD_LIBRARY_PATH is to get around an error running shellcheck on docker environments
-        echo "=========" >> "${OUTFILE}"
-        echo "Shellcheck running on ${FILENAME}" >> "${OUTFILE}"
-        # LD_LIBRARY_PATH=/tmp
-        shellcheck "${FILENAME}" >> "${OUTFILE}" 2>&1 || RC=1
+      for linter in ./lib/linters/*.sh
+      do
+        debug "Testing [\"${FILENAME}\"] against Linter [$(basename "${linter}")]"
+        set +e
+        ${linter} "${FILENAME}" "${WORKING_DIR}" || RC=$?
+        set -e
+      done
+    else
+      log "DELETED FILE ${FILENAME} - IGNORING"
     fi
 
-    if echo "${FILENAME}" | grep -e \.py$ -e \.python$ > /dev/null
-    then
-        echo "=========" >> "${OUTFILE}"
-        echo "pylint running on ${OUTFILE}" >> "${OUTFILE}"
-
-        # Disable rule: E0401: Unable to import '<module>' (import-error)
-        # Reason:
-        #  - Lambdas are packaged in a separate process and uploaded to S3
-        #  - If we have this rule, we will have to run pip install on all lambdas, which is out of scope for this Script.
-        #
-        pylint "${FILENAME}" --disable E0401 >> "${OUTFILE}" 2>&1 || RC=1
-    fi
+  else
+    log "Not linting file ${FILENAME}"
+  fi
+done
 
 
-    if echo "${FILENAME}" | grep -e \.yml$ -e \.yaml$ -e \.cfn$ -e \.template$ > /dev/null
-    then
-            do_yaml_lint "${FILENAME}" >> "${OUTFILE}" || RC=1
-    fi
-fi
 # Display output for capture on the terminal
-cat "${OUTFILE}"
+printf "\\n%s\\n" "${SEP}"
 if [ "$RC" -eq 1 ]
 then
-    echo Linting tests result : FAIL
+    # Echo to stderr (in subshell, to prevent issues with current shell)
+    (>&2 log "${RESULT_PREFIX} FAIL RC=[${RC}]")
 else
-    echo Linting tests result : PASS
+    echo ""
+    log "${RESULT_PREFIX} PASS RC=[${RC}]"
 fi
-exit $RC
+printf "%s\\n\\n" "${SEP}"
+
+exit ${RC}
